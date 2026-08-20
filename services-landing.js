@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 4, 20.08.2026
+   Версия 5, 20.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,11 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 5: правки Алисы по виду — убрана нумерация 01.N (осталась от узкой
+   колонки с боковым содержанием), выправлен блок требований (списки были серые
+   и полужирные, потому что у сайта на li стоит только цвет secondary, а вес
+   наследуется от body), убран лишний воздух под мид-CTA.
 
    Версия 4: блоки «Цифры-факты» и FAQ переезжают в коллекции-спутники и
    верстаются в Designer. Скрипт их больше не рисует (после переноса разметки
@@ -46,10 +51,27 @@
 /* ---------- 3. Отступы и номера у подзаголовков ----------
    Было: первый h3 получал margin-top:0 в расчёте на блок, который начинается
    с подзаголовка. У нас перед ним вводный абзац — заголовок приклеивался. */
-.services-inner__block-content h3:first-of-type { margin-top: 2rem; }
+/* Нумерация 01.N убрана. Её рисует счётчик из кода Тани, и она была осмысленной,
+   пока страница была узкой колонкой с боковым содержанием: номер стоял на поле
+   слева, рядом с пунктами того же содержания. Содержания больше нет — страница
+   во всю ширину, и номер уехал в самый левый край, к пустоте.
+   Правило Тани лежит перед </body>, то есть позже наших стилей, — отсюда important. */
+.services-inner__block-content h3::before { display: none !important; }
+
+/* Ритм подзаголовков: воздух сверху и тонкая линия, чтобы четыре раздела внутри
+   одного блока читались как разделы, а не как одна простыня. */
+.services-inner__block-content h3 {
+  margin-top: 3rem !important;
+  margin-bottom: 1rem !important;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--_colors---border--tertiary, rgba(21,21,21,.1));
+}
+.services-inner__block-content h3:first-of-type {
+  margin-top: 2rem !important;
+  padding-top: 0;
+  border-top: 0;
+}
 .services-inner__block-content > :first-child { margin-top: 0 !important; }
-.services-inner__block-content h3::before { top: .35rem; }
-@media (max-width: 479px) { .services-inner__block-content h3::before { top: .25rem; } }
 
 /* ---------- 4. Таблицы: настоящие, вместо картинок ---------- */
 .s-table-scroll { overflow-x: auto; margin: 2rem 0; -webkit-overflow-scrolling: touch; }
@@ -93,9 +115,17 @@
 .s-built .jur-why__item-number p::after { content: counter(why-counter); }
 
 /* ---------- 6. Мид-CTA ---------- */
+/* Между плашкой CTA и «Лидерами направления» складывались три отступа:
+   2.5rem у самой плашки, 2rem снизу у секции и 5–6.25rem сверху у лидеров.
+   Оставляем один — тот, что задан ритмом сайта, и его же поджимаем. */
+.s-built.is-s-midcta { padding-top: 0; padding-bottom: 0; }
+.s-built.is-s-midcta + .s-leaders,
+.s-built.is-s-midcta + .s-cases,
+.s-built.is-s-midcta + .s-built { padding-top: var(--_spacing---section-padding--40, 2.5rem); }
+
 .s-midcta__inner {
   background: var(--_colors---background--secondary); border-radius: .5rem;
-  padding: 2rem; margin: 2.5rem 0;
+  padding: 2rem; margin: 2.5rem 0 0;
   display: flex; flex-flow: column; gap: 1.25rem; align-items: flex-start;
 }
 .s-midcta__text { display: flex; flex-flow: column; gap: .5rem; }
@@ -147,21 +177,28 @@
   padding-left: 1.1rem;
   display: block;
 }
+/* Пункты списка выглядели серыми и полужирными: в стилях сайта у li задан
+   только цвет secondary, а вес и размер наследуются от body, где вес medium.
+   У абзацев всё это задано явно — приводим пункты к абзацам. */
 .services-inner__block-content li {
   position: relative;
   list-style: none;
   padding-left: .9rem;
-  margin-bottom: .55rem;
-  line-height: var(--_typography---line-height--body-large, 140%);
+  margin-bottom: .5rem;
+  color: var(--_colors---text--primary);
+  font-family: var(--_typography---font-family--body);
+  font-size: var(--_typography---font-size--text);
+  font-weight: var(--_typography---font-weight--regular, 400);
+  line-height: var(--_typography---line-height--body-regular, 150%);
 }
 .services-inner__block-content li:last-child { margin-bottom: 0; }
 .services-inner__block-content li::before {
   content: '';
   position: absolute;
   left: 0;
-  top: .55em;
-  width: .4rem;
-  height: .4rem;
+  top: .6em;
+  width: .35rem;
+  height: .35rem;
   background: var(--_colors---base--brand-primary);
 }
 .services-inner__block-content li li::before { background: var(--_colors---text--secondary); }
