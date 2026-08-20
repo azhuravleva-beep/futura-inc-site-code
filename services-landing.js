@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 3, 11.08.2026
+   Версия 4, 20.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,12 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 4: блоки «Цифры-факты» и FAQ переезжают в коллекции-спутники и
+   верстаются в Designer. Скрипт их больше не рисует (после переноса разметки
+   в коллекции в тексте их просто нет), но берёт на себя три вещи, которых
+   в стилях сайта нет: оформление списков, иконку аккордеона на десктопе
+   и скрытие секций с пустой коллекцией.
 
    Каждый блок собирается только если для него есть текст, и обёрнут
    в свою страховку: сбой одного блока не ломает страницу и остальные блоки.
@@ -128,6 +134,47 @@
   .s-mobile-cta .button { width: 100%; justify-content: center; }
   body { padding-bottom: 4.5rem; }
 }
+
+/* ---------- 8. Списки в текстовых блоках. Вернулось из патча 10.08 ----------
+   Патч жил в шаблоне и удалился вместе с версией 2 кода. В стилях сайта у списков
+   только overflow:hidden, который обрезает маркеры, — поэтому все буллеты,
+   которые пишет машина, выглядели сломанными. Держим правила здесь, чтобы
+   их больше нельзя было потерять при чистке кода в Webflow. */
+.services-inner__block-content ul,
+.services-inner__block-content ol {
+  overflow: visible;
+  margin: .75rem 0 1.25rem;
+  padding-left: 1.1rem;
+  display: block;
+}
+.services-inner__block-content li {
+  position: relative;
+  list-style: none;
+  padding-left: .9rem;
+  margin-bottom: .55rem;
+  line-height: var(--_typography---line-height--body-large, 140%);
+}
+.services-inner__block-content li:last-child { margin-bottom: 0; }
+.services-inner__block-content li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: .55em;
+  width: .4rem;
+  height: .4rem;
+  background: var(--_colors---base--brand-primary);
+}
+.services-inner__block-content li li::before { background: var(--_colors---text--secondary); }
+.services-inner__block-content ol li { list-style: decimal; padding-left: .25rem; }
+.services-inner__block-content ol li::before { content: none; }
+
+/* ---------- 9. Иконка аккордеона на десктопе ----------
+   У шаблона юрисдикций это правило лежит отдельным html-embed на странице.
+   Без него у секции FAQ видно сразу «+» и «−»: правило сайта, которое прячет
+   лишнюю иконку, живёт только внутри @media (max-width: 991px). */
+.faqs__dropdown-toggle .faqs__dropdown-toggle-icon .is-close,
+.faqs__dropdown-toggle.w--open .faqs__dropdown-toggle-icon .is-open { display: none; }
+.faqs__dropdown-toggle.w--open .faqs__dropdown-toggle-icon .is-close { display: block; }
 `;
 
   function injectCSS() {
@@ -432,10 +479,26 @@
     });
   }
 
+  // --------------------------------------------- пустые секции коллекций
+  // Блоки «Цифры-факты» и FAQ выводятся из коллекций-спутников. Пока у услуги
+  // нет записей, Webflow рисует пустую секцию с заголовком и надписью
+  // «No items found» — на 71 странице услуг это выглядело бы как брак.
+  // Так же, как уже сделан блок кейсов: нет данных — нет секции.
+  function hideEmptySections() {
+    var empties = document.querySelectorAll('.w-dyn-empty');
+    for (var i = 0; i < empties.length; i++) {
+      var sec = empties[i].closest('section');
+      if (!sec || sec.querySelector('.w-dyn-item')) continue;
+      if (sec.querySelector('form')) continue;              // форму не трогаем
+      sec.style.display = 'none';
+    }
+  }
+
   injectCSS();
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', build);
+    document.addEventListener('DOMContentLoaded', function () { build(); hideEmptySections(); });
   } else {
     build();
+    hideEmptySections();
   }
 })();
