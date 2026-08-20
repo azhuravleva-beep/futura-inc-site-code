@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 5, 20.08.2026
+   Версия 6, 20.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,10 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 6: второй круг правок Алисы — висящие предлоги (неразрывные пробелы),
+   балансировка строк в заголовках карточек, ритм отступов внутри текстовых блоков,
+   карточки-факты стали компактнее.
 
    Версия 5: правки Алисы по виду — убрана нумерация 01.N (осталась от узкой
    колонки с боковым содержанием), выправлен блок требований (списки были серые
@@ -61,17 +65,29 @@
 /* Ритм подзаголовков: воздух сверху и тонкая линия, чтобы четыре раздела внутри
    одного блока читались как разделы, а не как одна простыня. */
 .services-inner__block-content h3 {
-  margin-top: 3rem !important;
-  margin-bottom: 1rem !important;
-  padding-top: 1.5rem;
+  margin-top: 2.25rem !important;
+  margin-bottom: .75rem !important;
+  padding-top: 1.25rem;
   border-top: 1px solid var(--_colors---border--tertiary, rgba(21,21,21,.1));
 }
 .services-inner__block-content h3:first-of-type {
-  margin-top: 2rem !important;
+  margin-top: 1.5rem !important;
   padding-top: 0;
   border-top: 0;
 }
 .services-inner__block-content > :first-child { margin-top: 0 !important; }
+.services-inner__block-content > :last-child { margin-bottom: 0; }
+
+/* Абзацы и списки в одном ритме с подзаголовками: шаг .75rem внутри раздела,
+   2.25rem между разделами. Раньше внутренние отступы были то 1.25rem, то 2rem,
+   и разделы выглядели неровно. */
+.services-inner__block-content p { margin-bottom: .75rem; }
+
+/* Заголовки карточек и значения фактов: браузер сам выравнивает длину строк,
+   чтобы не получалось «одна строка длинная, вторая из одного слова». */
+.s-built .jur-why__item h3,
+.s-built .jur-why__item .heading-style-h4,
+.s-built .jur-top__item .heading-style-h4 { text-wrap: balance; }
 
 /* ---------- 4. Таблицы: настоящие, вместо картинок ---------- */
 .s-table-scroll { overflow-x: auto; margin: 2rem 0; -webkit-overflow-scrolling: touch; }
@@ -113,6 +129,19 @@
 .s-built .jur-why__list { counter-reset: why-counter; }
 .s-built .jur-why__item { counter-increment: why-counter; position: relative; }
 .s-built .jur-why__item-number p::after { content: counter(why-counter); }
+
+/* ---------- 5б. Карточки-факты под героем ----------
+   Значение набиралось тем же кеглем, что заголовок блока: строка «не ранее
+   5 недель до решения» переносилась и карточки выходили разной высоты.
+   Кегль чуть меньше, межстрочный интервал плотнее, отступ от подписи ровный. */
+.s-built.is-s-facts { padding-bottom: 0; }
+.s-built .jur-top__item { padding-top: 1rem; row-gap: .375rem; }
+.s-built .jur-top__item .text-style-label { margin-bottom: 0; }
+.s-built .jur-top__item .heading-style-h4 {
+  font-size: clamp(1.25rem, 1.6vw, 1.5rem);
+  line-height: 1.15;
+  margin-bottom: 0;
+}
 
 /* ---------- 6. Мид-CTA ---------- */
 /* Между плашкой CTA и «Лидерами направления» складывались три отступа:
@@ -173,8 +202,8 @@
 .services-inner__block-content ul,
 .services-inner__block-content ol {
   overflow: visible;
-  margin: .75rem 0 1.25rem;
-  padding-left: 1.1rem;
+  margin: .5rem 0 .75rem;
+  padding-left: 1rem;
   display: block;
 }
 /* Пункты списка выглядели серыми и полужирными: в стилях сайта у li задан
@@ -184,7 +213,7 @@
   position: relative;
   list-style: none;
   padding-left: .9rem;
-  margin-bottom: .5rem;
+  margin-bottom: .4rem;
   color: var(--_colors---text--primary);
   font-family: var(--_typography---font-family--body);
   font-size: var(--_typography---font-size--text);
@@ -516,6 +545,53 @@
     });
   }
 
+  // ------------------------------------------- висящие предлоги
+  // Предлог или союз в конце строки — «висячий». Лечится неразрывным пробелом:
+  // короткое слово склеивается со следующим и переезжает вниз вместе с ним.
+  // Так «не ранее 5 недель до решения» ломается как «не ранее 5 недель /
+  // до решения», а не «… до / решения». Правка только внешняя: в CMS текст
+  // остаётся с обычными пробелами.
+  var GLUE_RU = ['и','а','но','или','в','во','на','к','ко','с','со','у','о','об',
+    'от','до','за','по','из','над','под','при','для','без','не','ни','то','же',
+    'ли','бы','что','чем','как','так','это','если','чтобы','после','перед',
+    'между','через','около','вместе','только'];
+  var GLUE_EN = ['of','in','on','at','to','by','for','the','a','an','and','or',
+    'is','are','as','no','not','up','with','from','into','than','that','which',
+    'after','before','within','only'];
+
+  function glueRe(words) {
+    return new RegExp('(^|[\\s(«“"—–-])(' + words.join('|') + ')[ \\t]+', 'gi');
+  }
+  var RE_WORDS = [glueRe(GLUE_RU), glueRe(GLUE_EN)];
+  var RE_NUM = /(\d)[ 	]+(?=\S)/g;          // «5 недель», «12 месяцев»
+
+  function noHangingWords(root) {
+    if (!root) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      var t = n.nodeValue;
+      if (!t || t.indexOf(' ') < 0) return;
+      var before = t;
+      for (var pass = 0; pass < 2; pass++) {
+        RE_WORDS.forEach(function (re) {
+          t = t.replace(re, function (m, pre, w) { return pre + w + ' '; });
+        });
+      }
+      t = t.replace(RE_NUM, '$1 ');
+      if (t !== before) n.nodeValue = t;
+    });
+  }
+
+  function typography() {
+    ['.s-built', '.services-inner__block-content', '.services-inner__block-stages',
+     '.s-hero__info'].forEach(function (sel) {
+      var list = document.querySelectorAll(sel);
+      for (var i = 0; i < list.length; i++) noHangingWords(list[i]);
+    });
+  }
+
   // --------------------------------------------- пустые секции коллекций
   // Блоки «Цифры-факты» и FAQ выводятся из коллекций-спутников. Пока у услуги
   // нет записей, Webflow рисует пустую секцию с заголовком и надписью
@@ -533,9 +609,12 @@
 
   injectCSS();
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { build(); hideEmptySections(); });
+    document.addEventListener('DOMContentLoaded', function () {
+      build(); hideEmptySections(); typography();
+    });
   } else {
     build();
     hideEmptySections();
+    typography();
   }
 })();
