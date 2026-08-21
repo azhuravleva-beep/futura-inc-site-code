@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 6, 20.08.2026
+   Версия 7, 21.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,10 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 7: правки Никиты — жёлтые маркеры списков не читались на светлом фоне
+   (brand-primary это буквально «yellow»), и мигал текст кнопки в герое: скрипт
+   подменял «Обсудить задачу» на оффер уже после отрисовки страницы.
 
    Версия 6: второй круг правок Алисы — висящие предлоги (неразрывные пробелы),
    балансировка строк в заголовках карточек, ритм отступов внутри текстовых блоков,
@@ -211,8 +215,8 @@
    У абзацев всё это задано явно — приводим пункты к абзацам. */
 .services-inner__block-content li {
   position: relative;
-  list-style: none;
-  padding-left: .9rem;
+  list-style: disc;
+  padding-left: .25rem;
   margin-bottom: .4rem;
   color: var(--_colors---text--primary);
   font-family: var(--_typography---font-family--body);
@@ -221,18 +225,12 @@
   line-height: var(--_typography---line-height--body-regular, 150%);
 }
 .services-inner__block-content li:last-child { margin-bottom: 0; }
-.services-inner__block-content li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: .6em;
-  width: .35rem;
-  height: .35rem;
-  background: var(--_colors---base--brand-primary);
-}
-.services-inner__block-content li li::before { background: var(--_colors---text--secondary); }
-.services-inner__block-content ol li { list-style: decimal; padding-left: .25rem; }
-.services-inner__block-content ol li::before { content: none; }
+/* Маркер жёлтым квадратом не читался: brand-primary у сайта это буквально «yellow»,
+   на светлом фоне он почти невидим (замечание Никиты 21.08). Возвращаем обычный
+   маркер цветом текста — так списки выглядят на остальных страницах сайта. */
+.services-inner__block-content li::marker { color: var(--_colors---text--primary); }
+.services-inner__block-content li::before { content: none; }
+.services-inner__block-content ol li { list-style: decimal; }
 
 /* ---------- 9. Иконка аккордеона на десктопе ----------
    У шаблона юрисдикций это правило лежит отдельным html-embed на странице.
@@ -540,8 +538,13 @@
       bar.appendChild(button(offer.btn));
       document.body.appendChild(bar);
 
-      var hero = document.querySelector('.s-hero .button-group .button .button-text');
-      if (hero) hero.textContent = offer.btn;
+      // Текст кнопки в герое больше НЕ подменяем. Скрипт грузится по сети и
+      // выполняется после отрисовки, поэтому посетитель успевал прочитать
+      // «Обсудить задачу», а потом видел, как надпись меняется на оффер —
+      // выглядело как поломка (замечание Никиты 21.08). Оффер остаётся там,
+      // где он не мигает: в плашке после этапов и в кнопке на мобильном.
+      // Вернуть его в герой можно будет без мигания, когда под оффер появится
+      // поле в CMS и надпись придёт вместе с версткой страницы.
     });
   }
 
