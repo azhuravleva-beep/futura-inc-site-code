@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 8, 21.08.2026
+   Версия 9, 21.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,11 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 9: у таблицы, вынесенной в свою полосу, отвалилось оформление —
+   правила были привязаны к текстовому блоку, из которого её и достали.
+   Теперь оформление висит на самой таблице (класс s-table), а не на её окружении:
+   вынести её теперь можно куда угодно.
 
    Версия 8: «широко и справа пусто» — не про ширину, а про то, что у нас на всю
    ширину растянут ТЕКСТ. Замер эталонов: на странице Кипра ни одного абзаца
@@ -118,25 +123,41 @@
 .s-built .jur-why__item .heading-style-h4,
 .s-built .jur-top__item .heading-style-h4 { text-wrap: balance; }
 
-/* ---------- 4. Таблицы: настоящие, вместо картинок ---------- */
+/* ---------- 4. Таблицы: настоящие, вместо картинок ----------
+   Правила висят на самой таблице (класс s-table скрипт вешает при разборе
+   страницы), а не на блоке, внутри которого она лежит. Версия 8 вынесла таблицу
+   в отдельную полосу — и вместе с переездом она потеряла всё оформление, потому
+   что селекторы были привязаны к текстовому блоку. Больше так не сломается. */
 .s-table-scroll { overflow-x: auto; margin: 2rem 0; -webkit-overflow-scrolling: touch; }
 .services-inner__block-content table,
-.s-built table {
+.s-built table,
+.s-table-band table,
+table.s-table {
   width: 100%; min-width: 30rem; border-collapse: collapse; margin: 0;
   font-size: var(--_typography---font-size--text, 1rem);
+  table-layout: auto;
 }
 .services-inner__block-content th, .services-inner__block-content td,
-.s-built th, .s-built td {
+.s-built th, .s-built td,
+.s-table-band th, .s-table-band td,
+table.s-table th, table.s-table td {
   text-align: left; vertical-align: top; padding: .75rem 1rem;
   border-bottom: 1px solid var(--_colors---base--black-15);
   line-height: var(--_typography---line-height--body-regular, 140%);
 }
-.services-inner__block-content thead th, .s-built thead th {
-  border-bottom: 2px solid var(--_colors---base--brand-primary);
+.services-inner__block-content thead th, .s-built thead th,
+.s-table-band thead th, table.s-table thead th {
+  border-bottom: 2px solid var(--_colors---text--primary);
   font-weight: 600; white-space: nowrap;
 }
 .services-inner__block-content tbody tr:nth-child(odd),
-.s-built tbody tr:nth-child(odd) { background: var(--_colors---background--secondary); }
+.s-built tbody tr:nth-child(odd),
+.s-table-band tbody tr:nth-child(odd),
+table.s-table tbody tr:nth-child(odd) { background: var(--_colors---background--secondary); }
+
+/* первая колонка — «этап», ей нужна ширина, второй хватает содержимого */
+.s-table-band table.s-table th:first-child,
+.s-table-band table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
 /* картинки, которые ещё остались на других страницах: во всю колонку и по клику */
 .services-inner__block-content .s-table-img { display: block; margin: 2rem 0; cursor: zoom-in; }
@@ -617,6 +638,8 @@
     var table = scroll || sec.querySelector('table');
     if (!grid || !table) return;
     var band = el('div', 's-table-band');
+    var real = table.tagName === 'TABLE' ? table : table.querySelector('table');
+    if (real && real.className.indexOf('s-table') < 0) real.className += ' s-table';
     band.appendChild(table);
     grid.parentNode.insertBefore(band, grid.nextSibling);
   }
