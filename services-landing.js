@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 7, 21.08.2026
+   Версия 8, 21.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,12 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 8: «широко и справа пусто» — не про ширину, а про то, что у нас на всю
+   ширину растянут ТЕКСТ. Замер эталонов: на странице Кипра ни одного абзаца
+   длиннее 245 знаков, всё разложено карточками и одним двухколоночным блоком
+   (заголовок слева, содержимое справа). Повторяем этот приём: текстовые блоки
+   услуги встают в двухколоночную сетку, таблица уходит отдельной полосой.
 
    Версия 7: правки Никиты — жёлтые маркеры списков не читались на светлом фоне
    (brand-primary это буквально «yellow»), и мигал текст кнопки в герое: скрипт
@@ -48,8 +54,27 @@
 .s-aside-wrap { display: none !important; }
 .s-content .s__grid { display: block !important; }
 
-/* строка текста во всю ширину нечитаема — держим комфортную длину */
-.services-inner__block-content { max-width: 60rem; overflow: visible; }
+/* Ширину строки больше не держим max-width: из-за него текст прижимался влево,
+   а справа оставалась пустая половина (замечания Никиты и Юли 21.08). Теперь
+   комфортную длину строки задаёт структура — двухколоночная сетка, как на Кипре. */
+.services-inner__block-content { overflow: visible; }
+
+/* ---------- 1б. Двухколоночная сетка текстовых блоков ----------
+   Приём с эталонных страниц: слева заголовок раздела, справа содержимое.
+   Ширина заполняется целиком, а строка текста остаётся короткой. */
+.s-grid2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+  gap: 1.5rem 4rem;
+  align-items: start;
+}
+.s-grid2 > .s-grid2__head { margin: 0; }
+.s-grid2 > .s-grid2__head h2 { margin-top: 0; }
+@media (max-width: 991px) {
+  .s-grid2 { grid-template-columns: 1fr; gap: 1rem; }
+}
+/* таблица уезжает из текстовой колонки в свою полосу во всю ширину */
+.s-table-band { margin: 2.5rem 0 0; }
 
 /* ---------- 2. Герой: описание было прижато к заголовку ---------- */
 @media (min-width: 992px) {
@@ -279,13 +304,6 @@
     var FORM_HREF = '#wf-form-Discuss-the-Task-Form';
     var BTN_CLASS = 'button w-variant-1b7e3f2c-b36a-3f03-560c-40dd15c0058c w-inline-block';
 
-    function el(tag, cls, html) {
-      var n = document.createElement(tag);
-      if (cls) n.className = cls;
-      if (html != null) n.innerHTML = html;
-      return n;
-    }
-
     function button(text) {
       var a = el('a', BTN_CLASS);
       a.setAttribute('href', FORM_HREF);
@@ -317,10 +335,6 @@
         else if (cur) { cur.body.push(n); }
       });
       return out;
-    }
-
-    function safe(name, fn) {
-      try { fn(); } catch (e) { if (window.console) console.warn('[лендинг] блок «' + name + '» не собрался:', e); }
     }
 
     function card(title, bodyNodes, titleCls) {
@@ -548,6 +562,71 @@
     });
   }
 
+  // Мелкий помощник: создать элемент с классом. Нужен и сборщику блоков,
+  // и раскладке в две колонки, поэтому живёт на уровне модуля.
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+
+  // Страховка: сбой одного блока не должен ломать страницу и остальные блоки.
+  function safe(name, fn) {
+    try { fn(); } catch (e) {
+      if (window.console) console.warn('[лендинг] блок «' + name + '» не собрался:', e);
+    }
+  }
+
+  // ------------------------------------ двухколоночная сетка текстовых блоков
+  // На эталонных страницах (Кипр, Клоны) нет ни одного широкого полотна текста:
+  // либо карточки, либо сетка «заголовок слева — содержимое справа». Наши блоки
+  // «Что требуется» и «Этапы работы» — как раз полотна, поэтому на всю ширину
+  // они читались плохо, а справа оставалась пустая половина. Раскладываем их
+  // тем же приёмом, используя классы списков самого сайта.
+  function twoColumns(sectionSel, contentSel) {
+    var sec = document.querySelector(sectionSel);
+    if (!sec || sec.querySelector('.s-grid2')) return;
+    var head = sec.querySelector('.services-inner__block-heading');
+    var content = sec.querySelector(contentSel);
+    if (!head || !content || !content.parentNode) return;
+
+    var grid = el('div', 's-grid2');
+    var left = el('div', 's-grid2__head');
+    var right = el('div', 's-grid2__body');
+    content.parentNode.insertBefore(grid, content);
+    left.appendChild(head);
+    right.appendChild(content);
+    grid.appendChild(left);
+    grid.appendChild(right);
+
+    // Класс списков со страниц юрисдикций (jur-how__rich-list) сюда НЕ вешаем,
+    // хотя соблазн есть: он задаёт вес medium и list-style:none, то есть возвращает
+    // ровно то, на что жаловался Никита — бледные полужирные пункты без маркеров.
+    // Типографику списков держим своими правилами выше.
+    return grid;
+  }
+
+  // Таблица со сроками и пошлинами шире текстовой колонки — выносим её
+  // из сетки в свою полосу, там ширина работает на неё, а не против.
+  function tableToBand(sectionSel) {
+    var sec = document.querySelector(sectionSel);
+    if (!sec) return;
+    var grid = sec.querySelector('.s-grid2');
+    var scroll = sec.querySelector('.s-table-scroll');
+    var table = scroll || sec.querySelector('table');
+    if (!grid || !table) return;
+    var band = el('div', 's-table-band');
+    band.appendChild(table);
+    grid.parentNode.insertBefore(band, grid.nextSibling);
+  }
+
+  function reflow() {
+    safe('сетка требований', function () { twoColumns('.s-solution', '.services-inner__block-content'); });
+    safe('таблица полосой', function () { tableToBand('.s-solution'); });
+    safe('сетка этапов', function () { twoColumns('.s-stages', '.services-inner__block-stages'); });
+  }
+
   // ------------------------------------------- висящие предлоги
   // Предлог или союз в конце строки — «висячий». Лечится неразрывным пробелом:
   // короткое слово склеивается со следующим и переезжает вниз вместе с ним.
@@ -613,10 +692,11 @@
   injectCSS();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
-      build(); hideEmptySections(); typography();
+      build(); reflow(); hideEmptySections(); typography();
     });
   } else {
     build();
+    reflow();
     hideEmptySections();
     typography();
   }
