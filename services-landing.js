@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 10, 24.08.2026
+   Версия 11, 24.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,14 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 11: таблица возвращена в поток. Версия 8 выносила её отдельной полосой,
+   потому что таблица была шире текстовой колонки. После версии 10 она стоит ровно
+   по ширине этой колонки — то есть выносить больше нечего, а вынос ломал порядок
+   чтения: сноска с первоисточниками стоит в тексте сразу после таблицы, и когда
+   таблица уезжала в конец блока, сноска оказывалась ВЫШЕ таблицы, под заголовком,
+   как будто относится к нему. Заодно уезжал вниз и блок FAQ. Теперь порядок
+   ровно такой, как его написали: заголовок → таблица → сноска → FAQ.
 
    Версия 10: три блока стояли на трёх разных вертикалях, и ни одна не была
    выбрана — их выдало содержимое. Обёртка блока `.s__info-wrap` это flex-колонка
@@ -102,27 +110,16 @@
    держится на всех ширинах, а не только на одной. align-self: stretch снимает
    сжатие по содержимому, max-width держит меру. */
 .s-content { --s-measure: 63.5rem; }
-.s-grid2,
-.s-table-band {
+.s-grid2 {
   align-self: stretch;
   width: 100%;
   max-width: var(--s-measure, 63.5rem);
 }
 
-/* Таблица встаёт во вторую колонку той же сетки — тем же левым и правым краем,
-   что текст над ней. Раньше она лежала отдельной полосой и упиралась в левый
-   край блока, то есть под заголовок, а не под текст. Сетка повторена здесь,
-   а не унаследована: полоса — сосед .s-grid2, а не его ребёнок. */
-.s-table-band {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
-  gap: 0 4rem;
-  margin: 2.5rem 0 0;
-}
-.s-table-band > * { grid-column: 2; min-width: 0; }
-@media (max-width: 991px) {
-  .s-table-band { display: block; }
-}
+/* Таблица остаётся там, где её поставил автор текста — внутри текстовой колонки.
+   Версия 8 выносила её отдельной полосой, потому что она была шире колонки;
+   после версии 10 колонка и таблица одной ширины, и вынос только ломал порядок
+   чтения (сноска с источниками оказывалась выше таблицы). */
 
 /* ---------- 2. Герой: описание было прижато к заголовку ---------- */
 @media (min-width: 992px) {
@@ -174,7 +171,6 @@
 .s-table-scroll { overflow-x: auto; margin: 2rem 0; -webkit-overflow-scrolling: touch; }
 .services-inner__block-content table,
 .s-built table,
-.s-table-band table,
 table.s-table {
   width: 100%; min-width: 30rem; border-collapse: collapse; margin: 0;
   font-size: var(--_typography---font-size--text, 1rem);
@@ -182,25 +178,23 @@ table.s-table {
 }
 .services-inner__block-content th, .services-inner__block-content td,
 .s-built th, .s-built td,
-.s-table-band th, .s-table-band td,
 table.s-table th, table.s-table td {
   text-align: left; vertical-align: top; padding: .75rem 1rem;
   border-bottom: 1px solid var(--_colors---base--black-15);
   line-height: var(--_typography---line-height--body-regular, 140%);
 }
 .services-inner__block-content thead th, .s-built thead th,
-.s-table-band thead th, table.s-table thead th {
+table.s-table thead th {
   border-bottom: 2px solid var(--_colors---text--primary);
   font-weight: 600; white-space: nowrap;
 }
 .services-inner__block-content tbody tr:nth-child(odd),
 .s-built tbody tr:nth-child(odd),
-.s-table-band tbody tr:nth-child(odd),
 table.s-table tbody tr:nth-child(odd) { background: var(--_colors---background--secondary); }
 
 /* первая колонка — «этап», ей нужна ширина, второй хватает содержимого */
-.s-table-band table.s-table th:first-child,
-.s-table-band table.s-table td:first-child { width: 55%; padding-right: 2rem; }
+table.s-table th:first-child,
+table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
 /* картинки, которые ещё остались на других страницах: во всю колонку и по клику */
 .services-inner__block-content .s-table-img { display: block; margin: 2rem 0; cursor: zoom-in; }
@@ -509,6 +503,9 @@ table.s-table tbody tr:nth-child(odd) { background: var(--_colors---background--
         if (!rt) return;
 
         Array.prototype.forEach.call(rt.querySelectorAll('table'), function (tb) {
+          // Класс оформления вешаем на саму таблицу: правила не должны зависеть
+          // от того, внутри чего она лежит (урок версии 9).
+          if (tb.className.indexOf('s-table') < 0) tb.className += ' s-table';
           if (tb.parentNode && tb.parentNode.classList.contains('s-table-scroll')) return;
           var box = el('div', 's-table-scroll');
           tb.parentNode.insertBefore(box, tb);
@@ -671,25 +668,8 @@ table.s-table tbody tr:nth-child(odd) { background: var(--_colors---background--
     return grid;
   }
 
-  // Таблица со сроками и пошлинами шире текстовой колонки — выносим её
-  // из сетки в свою полосу, там ширина работает на неё, а не против.
-  function tableToBand(sectionSel) {
-    var sec = document.querySelector(sectionSel);
-    if (!sec) return;
-    var grid = sec.querySelector('.s-grid2');
-    var scroll = sec.querySelector('.s-table-scroll');
-    var table = scroll || sec.querySelector('table');
-    if (!grid || !table) return;
-    var band = el('div', 's-table-band');
-    var real = table.tagName === 'TABLE' ? table : table.querySelector('table');
-    if (real && real.className.indexOf('s-table') < 0) real.className += ' s-table';
-    band.appendChild(table);
-    grid.parentNode.insertBefore(band, grid.nextSibling);
-  }
-
   function reflow() {
     safe('сетка требований', function () { twoColumns('.s-solution', '.services-inner__block-content'); });
-    safe('таблица полосой', function () { tableToBand('.s-solution'); });
     safe('сетка этапов', function () { twoColumns('.s-stages', '.services-inner__block-stages'); });
   }
 
