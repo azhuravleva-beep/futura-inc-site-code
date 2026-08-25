@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 13, 25.08.2026
+   Версия 14, 25.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,21 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 14: блоки «Цифры-факты» и FAQ переехали в коллекции, и на странице
+   их стало по два — старый, собранный скриптом из текста, и новый из CMS.
+   Правки две:
+
+   1. Компактный вид карточек цифр был привязан к .s-built — контейнеру, который
+      скрипт создаёт сам. Блок из CMS в него не попадает, поэтому значения в нём
+      рисовались во весь кегль h4 и выглядели вдвое крупнее (замечено Алисой).
+      Правила расширены на список из CMS. Классы .s-built в Designer нет вовсе —
+      скрипт вешает их на ходу, поэтому подогнать пришлось CSS, а не разметку.
+
+   2. Скрипт больше не рисует блок, если такой же блок на странице уже пришёл
+      из коллекции. Проверяется по .w-dyn-list рядом с нужным классом. Так снят
+      дубль, и порядок отключения безопасный: пока коллекция пуста, работает
+      старый блок из текста, а как только записи появились — включается новый.
 
    Версия 13: две правки, обе — по следам моих же ошибок.
 
@@ -185,7 +200,8 @@
    чтобы не получалось «одна строка длинная, вторая из одного слова». */
 .s-built .jur-why__item h3,
 .s-built .jur-why__item .heading-style-h4,
-.s-built .jur-top__item .heading-style-h4 { text-wrap: balance; }
+.s-built .jur-top__item .heading-style-h4,
+.jur-top__list-wrap.w-dyn-list .jur-top__item .heading-style-h4 { text-wrap: balance; }
 
 /* ---------- 4. Таблицы: настоящие, вместо картинок ----------
    Правила висят на самой таблице (класс s-table скрипт вешает при разборе
@@ -272,10 +288,16 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
    Значение набиралось тем же кеглем, что заголовок блока: строка «не ранее
    5 недель до решения» переносилась и карточки выходили разной высоты.
    Кегль чуть меньше, межстрочный интервал плотнее, отступ от подписи ровный. */
+/* Компактные карточки цифр. Селектор перечислен дважды: для блока, который
+   собирает скрипт (внутри .s-built), и для блока из коллекции (.w-dyn-list) —
+   у второго контейнера .s-built нет, а вид должен быть тот же. */
 .s-built.is-s-facts { padding-bottom: 0; }
-.s-built .jur-top__item { padding-top: 1rem; row-gap: .375rem; }
-.s-built .jur-top__item .text-style-label { margin-bottom: 0; }
-.s-built .jur-top__item .heading-style-h4 {
+.s-built .jur-top__item,
+.jur-top__list-wrap.w-dyn-list .jur-top__item { padding-top: 1rem; row-gap: .375rem; }
+.s-built .jur-top__item .text-style-label,
+.jur-top__list-wrap.w-dyn-list .jur-top__item .text-style-label { margin-bottom: 0; }
+.s-built .jur-top__item .heading-style-h4,
+.jur-top__list-wrap.w-dyn-list .jur-top__item .heading-style-h4 {
   font-size: clamp(1.25rem, 1.6vw, 1.5rem);
   line-height: 1.15;
   margin-bottom: 0;
@@ -474,6 +496,7 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
     // ---------------------------------------- 1. Цифры-факты под героем
     safe('цифры-факты', function () {
+      if (fromCms('.jur-top__list-wrap')) return;   // блок пришёл из коллекции
       if (!rt1) return;
       var p = null;
       for (var i = 0; i < rt1.children.length; i++) {
@@ -607,6 +630,7 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
     // ------------------------------------------- 5. FAQ-аккордеон
     safe('FAQ', function () {
+      if (fromCms('.faqs__list-wrap')) return;      // блок пришёл из коллекции
       if (!rt2) return;
       var faq = null;
       groups(rt2).forEach(function (g) { if (g.title.trim().toUpperCase() === FAQ_HEAD) faq = g; });
@@ -708,6 +732,14 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
   }
 
   // Страховка: сбой одного блока не должен ломать страницу и остальные блоки.
+  // Такой же блок уже пришёл из коллекции? Тогда скриптом его не рисуем.
+  // Проверка по .w-dyn-list: этот класс Webflow ставит только настоящему
+  // списку из CMS, у блоков, собранных здесь, его нет. Порядок отключения
+  // безопасный: пока коллекция пуста, работает старый блок из текста.
+  function fromCms(sel) {
+    return !!document.querySelector(sel + '.w-dyn-list');
+  }
+
   function safe(name, fn) {
     try { fn(); } catch (e) {
       if (window.console) console.warn('[лендинг] блок «' + name + '» не собрался:', e);
