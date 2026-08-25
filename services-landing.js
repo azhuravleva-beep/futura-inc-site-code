@@ -436,7 +436,7 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
     // чтобы на 76 страницах не встал оффер про ликвидацию.
     var OFFERS = {
       'liquidation-cyprus': {
-        ru: { title: 'Не уверены, что подходит — ликвидация или вычёркивание из реестра?',
+        ru: { title: 'Не уверены, что подходит — ликвидация или исключение из реестра?',
               text: 'Посмотрим состояние компании и пришлём список документов со сметой.',
               btn: 'Получить список документов и смету' },
         en: { title: 'Not sure whether it is a liquidation or a strike-off?',
