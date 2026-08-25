@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 12, 24.08.2026
+   Версия 13, 25.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,23 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 13: две правки, обе — по следам моих же ошибок.
+
+   1. Склейка предлогов могла сделать заголовок ШИРЕ колонки. Неразрывный пробел
+      склеивает служебное слово со следующим, а два прохода склеивали цепочку:
+      «and from the employee» превращалось в один неразрывный кусок, который
+      не влезал в колонку заголовка и наезжал на текст справа (замечено Алисой
+      на английской версии bcs-status-cyprus). Теперь склейка себя проверяет:
+      после правки заголовок измеряется, и если он вылез за свою колонку —
+      склейка в нём откатывается. Не влез и без склейки — разрешаем перенос
+      внутри слова, потому что наезд на соседнюю колонку хуже дефиса.
+
+   2. Сноска с источниками опознавалась только по слову «Источники»/«Sources»
+      в начале. На эталоне ликвидации сноска написана иначе — «Сроки в таблице —
+      из закона о компаниях Кипра…», двумя абзацами, — и оставалась в виде
+      основного текста. Теперь после таблицы помечаются все идущие подряд абзацы
+      со ссылкой на внешний источник, а не только начинающиеся нужным словом.
 
    Версия 12: сноска с первоисточниками перестала выглядеть основным текстом —
    мельче, курсивом, приглушённым цветом, и ссылки в ней подчёркнуты. До этого
@@ -224,6 +241,11 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
   color: inherit;
 }
 .s-sources a:hover { text-decoration-thickness: 2px; }
+
+/* Аварийный перенос внутри слова. Ставится скриптом только тому заголовку,
+   который не влез в свою колонку даже без склейки предлогов: наезд на соседнюю
+   колонку читается хуже, чем перенос. */
+.s-wrap-hard { overflow-wrap: break-word; word-break: break-word; hyphens: auto; }
 
 /* картинки, которые ещё остались на других страницах: во всю колонку и по клику */
 .services-inner__block-content .s-table-img { display: block; margin: 2rem 0; cursor: zoom-in; }
@@ -540,13 +562,24 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
           // «Sources», — это сноска с первоисточниками. Помечаем, чтобы отличать
           // её от основного текста. Ищем по тексту, а не по позиции: авторы
           // ставят сноску и через пустой абзац.
-          var nx = tb.nextElementSibling;
-          for (var hop = 0; nx && hop < 3; hop++) {
-            if (nx.tagName === 'P' && /^\s*(Источники|Sources)\s*[:—-]/i.test(nx.textContent || '')) {
+          // Сноска опознаётся двумя способами: по зачину «Источники»/«Sources»
+          // и по наличию ссылки на внешний источник. Второй способ добавлен
+          // 25.08: на эталоне ликвидации сноска написана без зачина —
+          // «Сроки в таблице — из закона о компаниях Кипра…» — и двумя абзацами.
+          // Идём по абзацам подряд и помечаем все, что похожи на сноску.
+          var nx = tb.nextElementSibling, marked = 0;
+          for (var hop = 0; nx && hop < 4; hop++) {
+            if (nx.tagName !== 'P') { if (marked) break; nx = nx.nextElementSibling; continue; }
+            var txt = nx.textContent || '';
+            var head = /^\s*(Источники|Sources)\s*[:—-]/i.test(txt);
+            var ext = !!nx.querySelector('a[href^="http"]');
+            if (head || ext) {
               if (nx.className.indexOf('s-sources') < 0) nx.className += ' s-sources';
-              break;
+              marked++;
+              nx = nx.nextElementSibling;
+              continue;
             }
-            nx = nx.nextElementSibling;
+            break;
           }
           if (tb.parentNode && tb.parentNode.classList.contains('s-table-scroll')) return;
           var box = el('div', 's-table-scroll');
@@ -754,6 +787,52 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
     });
   }
 
+  // Склейка предлогов может сделать неразрывный кусок шире колонки — тогда
+  // заголовок вылезает на соседнюю колонку. Меряем каждый заголовок после
+  // правки и откатываем склейку там, где она навредила.
+  function unglue(el) {
+    var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      if (n.nodeValue.indexOf('\u00a0') >= 0) n.nodeValue = n.nodeValue.replace(/\u00a0/g, ' ');
+    }
+  }
+
+  // Порядок средств важен. Раскленить проще всего, но тогда возвращается висящий
+  // предлог — ровно то, что просили убрать. Поэтому сначала уменьшаем кегль:
+  // заголовок вдвое длиннее эталонного просто не рассчитан на эту колонку.
+  // Расклейка и перенос внутри слова — последние средства.
+  var SHRINK = [0.86, 0.74, 0.64, 0.56];
+
+  function fitsIn(el) {
+    return el.scrollWidth <= el.clientWidth + 1;
+  }
+
+  function fixOverflowingHeadings() {
+    var list = document.querySelectorAll(
+      '.services-inner__block-heading h1, .services-inner__block-heading h2,' +
+      '.services-inner__block-heading h3, .s-built__head h1, .s-built__head h2,' +
+      '.s-hero__info h1, .s-built h3, .s-built .heading-style-h4');
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      el.style.fontSize = '';                        // сбросить прошлую подгонку
+      if (fitsIn(el)) continue;
+
+      var base = parseFloat(getComputedStyle(el).fontSize) || 0;
+      var done = false;
+      for (var k = 0; k < SHRINK.length && base; k++) {
+        el.style.fontSize = (base * SHRINK[k]).toFixed(2) + 'px';
+        if (fitsIn(el)) { done = true; break; }
+      }
+      if (done) continue;
+
+      el.style.fontSize = base ? (base * SHRINK[SHRINK.length - 1]).toFixed(2) + 'px' : '';
+      unglue(el);                                    // не помогло — расклеиваем
+      if (!fitsIn(el) && el.className.indexOf('s-wrap-hard') < 0) {
+        el.className += ' s-wrap-hard';              // и только теперь рвём слово
+      }
+    }
+  }
+
   function typography() {
     // Заголовки блоков попали в список 24.08: «Что требуется для ликвидации»
     // ломалось как «Что требуется для / ликвидации» — предлог висел в конце
@@ -780,15 +859,36 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
     }
   }
 
+  // Проверку «влез ли заголовок в колонку» нельзя делать сразу: до загрузки
+  // шрифта ширины другие, а при смене ширины окна колонка меняется. Поэтому
+  // мерим после готовности шрифтов и заново при ресайзе — с повторной склейкой,
+  // потому что откат склейки необратим.
+  function retypeset() {
+    safe('висящие предлоги', typography);
+    safe('заголовки шире колонки', fixOverflowingHeadings);
+  }
+
+  function scheduleTypeset() {
+    retypeset();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { safe('заголовки после шрифтов', fixOverflowingHeadings); });
+    }
+    var t;
+    window.addEventListener('resize', function () {
+      clearTimeout(t);
+      t = setTimeout(retypeset, 200);
+    });
+  }
+
   injectCSS();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
-      build(); reflow(); hideEmptySections(); typography();
+      build(); reflow(); hideEmptySections(); scheduleTypeset();
     });
   } else {
     build();
     reflow();
     hideEmptySections();
-    typography();
+    scheduleTypeset();
   }
 })();
