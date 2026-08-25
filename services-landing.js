@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 15, 25.08.2026
+   Версия 16, 25.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,12 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 16: мид-CTA появился на четырёх кипрских страницах — просьба Алисы.
+   До этого оффер был написан только под ликвидацию, и на остальных страницах
+   блок не показывался: так задумано, чтобы на 76 страницах не встал оффер
+   про ликвидацию. Тексты офферов написаны по образцу Алисы — «мы», обращение
+   на «вы», конкретное обещание в кнопке. Это черновик, ждёт её слова.
 
    Версия 15: две правки.
 
@@ -437,11 +443,43 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
     var OFFERS = {
       'liquidation-cyprus': {
         ru: { title: 'Не уверены, что подходит — ликвидация или исключение из реестра?',
-              text: 'Посмотрим состояние компании и пришлём список документов со сметой.',
+              text: 'Мы посмотрим состояние вашей компании и пришлём список документов со сметой.',
               btn: 'Получить список документов и смету' },
         en: { title: 'Not sure whether it is a liquidation or a strike-off?',
-              text: 'We review the company and send the document list with a quote.',
+              text: 'We review your company and send the document list with a quote.',
               btn: 'Get the document list and a quote' }
+      },
+      'bcs-status-cyprus': {
+        ru: { title: 'Не уверены, что ваша компания подходит под критерии BCS?',
+              text: 'Мы проверим структуру владения и инвестицию и пришлём список документов со сметой.',
+              btn: 'Проверить компанию под BCS' },
+        en: { title: 'Not sure your company meets the BCS criteria?',
+              text: 'We check your ownership structure and the investment, then send the document list with a quote.',
+              btn: 'Check your company for BCS' }
+      },
+      'trademark-registration-cyprus-eu': {
+        ru: { title: 'Не знаете, регистрировать знак на Кипре или сразу в ЕС?',
+              text: 'Мы проверим ваше обозначение по реестрам и посчитаем оба варианта — с пошлинами и сроками.',
+              btn: 'Получить проверку и смету' },
+        en: { title: 'Not sure whether to file in Cyprus or across the EU?',
+              text: 'We search the registers for your sign and price both routes, with fees and timelines.',
+              btn: 'Get a search and a quote' }
+      },
+      'corporate-tax-ip-box-cyprus': {
+        ru: { title: 'Не знаете, попадает ли ваш продукт в IP Box?',
+              text: 'Мы разберём ваши активы и расчёты и покажем, какая ставка получается на самом деле.',
+              btn: 'Посчитать ставку под IP Box' },
+        en: { title: 'Not sure whether your product qualifies for IP Box?',
+              text: 'We review your assets and the numbers and show the rate you actually get.',
+              btn: 'Calculate your IP Box rate' }
+      },
+      'redomiciliation-cyprus': {
+        ru: { title: 'Не уверены, можно ли перевести вашу компанию на Кипр?',
+              text: 'Мы прочитаем закон вашей юрисдикции и пришлём план перевода со сроками и пошлинами.',
+              btn: 'Проверить возможность перевода' },
+        en: { title: 'Not sure your company can be moved to Cyprus?',
+              text: 'We read the law of your jurisdiction and send a transfer plan with timelines and fees.',
+              btn: 'Check if a transfer is possible' }
       }
     };
     var slug = location.pathname.replace(/\/+$/, '').split('/').pop();
