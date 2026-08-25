@@ -1,6 +1,6 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 14, 25.08.2026
+   Версия 15, 25.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
@@ -9,6 +9,20 @@
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
    мид-CTA, кнопка на мобильном. Плюс разворачивает страницу во всю
    ширину и оформляет таблицы.
+
+   Версия 15: две правки.
+
+   1. Когда блок приходит из коллекции, скрипт отступал слишком рано — прямо
+      в начале сборщика. А сборщик делал ДВЕ вещи: рисовал блок и убирал из
+      текста исходник, из которого рисовал. Отступая, он пропускал и уборку,
+      поэтому на эталоне вылез сырой текст FAQ: заголовок «FAQ» и пять вопросов
+      обычными h4 внутри блока требований (замечено Алисой). Теперь исходник
+      из текста убирается ВСЕГДА, а рисуется блок только если коллекция пуста.
+
+   2. Мид-CTA переехал: был после этапов работы, стал сразу после «Что вы
+      получаете» — просьба Алисы. Оффер идёт сразу за списком выгод, а не
+      через два блока. Если секции «что вы получаете» на странице нет,
+      встаёт как раньше, после этапов.
 
    Версия 14: блоки «Цифры-факты» и FAQ переехали в коллекции, и на странице
    их стало по два — старый, собранный скриптом из текста, и новый из CMS.
@@ -497,8 +511,8 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
     // ---------------------------------------- 1. Цифры-факты под героем
     safe('цифры-факты', function () {
-      if (fromCms('.jur-top__list-wrap')) return;   // блок пришёл из коллекции
       if (!rt1) return;
+      var cmsFacts = fromCms('.jur-top__list-wrap');
       var p = null;
       for (var i = 0; i < rt1.children.length; i++) {
         var n = rt1.children[i];
@@ -506,6 +520,9 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
         if (n.tagName === 'H3') break;
       }
       if (!p) return;
+      // Исходную строку убираем в любом случае: если блок пришёл из коллекции,
+      // строка в тексте — просто дубль того же содержимого.
+      if (cmsFacts) { p.parentNode.removeChild(p); return; }
       var items = p.textContent.split('·').map(function (s) { return s.trim(); }).filter(Boolean);
       if (items.length < 2) return;
 
@@ -631,11 +648,19 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
     // ------------------------------------------- 5. FAQ-аккордеон
     safe('FAQ', function () {
-      if (fromCms('.faqs__list-wrap')) return;      // блок пришёл из коллекции
       if (!rt2) return;
       var faq = null;
       groups(rt2).forEach(function (g) { if (g.title.trim().toUpperCase() === FAQ_HEAD) faq = g; });
       if (!faq) return;
+
+      // Уборка исходника — ВСЕГДА, даже когда блок пришёл из коллекции.
+      // Иначе вопросы остаются в тексте обычными h4 и читаются как часть
+      // блока требований (версия 14 именно так и сломала эталон).
+      function dropSource() {
+        if (faq.head && faq.head.parentNode) faq.head.parentNode.removeChild(faq.head);
+        faq.body.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+      }
+      if (fromCms('.faqs__list-wrap')) { dropSource(); return; }
 
       var pairs = [], cur = null;
       faq.body.forEach(function (n) {
@@ -686,15 +711,17 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
       var before = document.querySelector('.s-related') || document.querySelector('.is-services-form-section');
       if (before && before.parentNode) before.parentNode.insertBefore(sec, before);
 
-      if (faq.head && faq.head.parentNode) faq.head.parentNode.removeChild(faq.head);
-      faq.body.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+      dropSource();
     });
 
-    // ------------------------------------ 6. Мид-CTA после этапов
+    // -------------------- 6. Мид-CTA сразу после «Что вы получаете»
     safe('мид-CTA', function () {
       if (!offer) return;
-      var stages = document.querySelector('.s-stages');
-      if (!stages) return;
+      // Просьба Алисы 25.08: оффер идёт сразу за списком выгод, а не через
+      // два блока после этапов. Запасной вариант — прежнее место.
+      var after = document.querySelector('.s-built.is-s-results') ||
+                  document.querySelector('.s-stages');
+      if (!after) return;
       var sec = section('is-s-midcta', null);
       var inner = el('div', 's-midcta__inner');
       var txt = el('div', 's-midcta__text');
@@ -703,7 +730,7 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
       inner.appendChild(txt);
       inner.appendChild(button(offer.btn));
       sec._host.appendChild(inner);
-      stages.parentNode.insertBefore(sec, stages.nextSibling);
+      after.parentNode.insertBefore(sec, after.nextSibling);
     });
 
     // --------------------- 7. Кнопка на мобильном + текст кнопок
