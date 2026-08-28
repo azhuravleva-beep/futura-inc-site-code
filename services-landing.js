@@ -1,9 +1,41 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 17, 25.08.2026
+   Версия 20, 27.08.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
+
+   Версия 20: широкий блок карточек из блока 2. Выбор Алисы 27.08 между тремя
+   вариантами: таблица, карточки в текстовой колонке, отдельная секция во всю
+   ширину. Выбрана третья — она читается как блок «Когда нужна услуга» и даёт
+   сравнить варианты взглядом. Разметка: H3 — заголовок раздела, H4 — карточка.
+
+   Версия 19: две правки по замечаниям Алисы к батчу 0 волны 1.
+
+   1. Сноска с источниками помечалась только у страниц с таблицей — код пометки
+      лежал внутри обхода таблиц. На странице ESOP таблицы нет по пресету,
+      и сноска отрисовалась обычным текстом в полный кегль. Теперь сноска
+      опознаётся сама: зачин «Источники»/«Sources» плюс идущие следом абзацы
+      со ссылками наружу. Касается всех типов без таблицы сравнения — это
+      сорок с лишним страниц волны 1.
+
+   2. Ячейки таблиц набирались весом 700, жирнее собственной шапки. Замер
+      27.08 на эталоне: td 700, th 600, обычный абзац 500. Вернули ячейкам 500.
+
+   Версия 18: запасные офферы по направлению услуги. Скрипт прячет боковую
+   колонку вместе с плавающей кнопкой на всех страницах услуг, а мид-CTA ставил
+   только там, где оффер написан под слаг — то есть на пяти кипрских. Остальная
+   71 страница после выкатки осталась бы без конверсионной точки в теле.
+   Теперь при отсутствии своего оффера берётся оффер направления, а направление
+   читается из микроразметки (serviceType). Оффер страницы всегда сильнее.
+
+   Тексты офферов переписаны в тот же день по возражению Алисы: они обещали
+   артефакт («получить план и смету»), а за формой нет никакого процесса — заявка
+   падает в общую форму, человек отписывается руками и зовёт на созвон. Три правила
+   теперь такие: кнопка — «Обсудить <тему>» (разговор мы правда проводим, а тема
+   отличает страницы друг от друга); про автора ответа не пишем, потому что заявки
+   распределяются по-разному; срок ответа не обещаем, гарантировать его некому.
+   По этому же правилу переписаны и пять кипрских офферов от 25.08.
 
    Что делает: превращает три текстовых поля CMS в блоки лендинга —
    цифры-факты, карточки ситуаций, «что вы получаете», FAQ-аккордеон,
@@ -264,6 +296,15 @@ table.s-table tbody tr:nth-child(odd) { background: var(--_colors---background--
 table.s-table th:first-child,
 table.s-table td:first-child { width: 55%; padding-right: 2rem; }
 
+/* Замер 27.08: ячейки набирались весом 700 — жирнее собственной шапки (600)
+   и жирнее основного текста (500). Приходит из базовых стилей сайта, не из
+   наших правил. На эталоне это читалось как акцент, потому что значения там
+   короткие; на странице лицензий, где в ячейке живёт абзац, получилась стена
+   жирного. Возвращаем ячейкам вес основного текста, шапку оставляем плотнее. */
+.services-inner__block-content table td,
+.s-built table td,
+table.s-table td { font-weight: 500; }
+
 /* ---------- 4б. Сноска с первоисточниками ----------
    Служебный текст под таблицей: он не должен конкурировать с содержанием.
    Ссылки внутри подчёркиваем принудительно — у сайта у ссылок в rich-text
@@ -450,47 +491,155 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
     var OFFERS = {
       'liquidation-cyprus': {
         ru: { title: 'Не уверены, что подходит — ликвидация или исключение из реестра?',
-              text: 'Мы посмотрим состояние вашей компании и пришлём список документов со сметой.',
-              btn: 'Получить список документов и смету' },
+              text: 'Расскажите, в каком состоянии компания, — обсудим, каким путём её закрывать.',
+              btn: 'Обсудить закрытие компании' },
         en: { title: 'Not sure whether it is a liquidation or a strike-off?',
-              text: 'We review your company and send the document list with a quote.',
-              btn: 'Get the document list and a quote' }
+              text: 'Tell us where the company stands and we will talk through which route to take.',
+              btn: 'Talk through closing the company' }
       },
       'bcs-status-cyprus': {
         ru: { title: 'Не уверены, что ваша компания подходит под критерии BCS?',
-              text: 'Мы проверим структуру владения и инвестицию и пришлём список документов со сметой.',
-              btn: 'Проверить компанию под BCS' },
+              text: 'Расскажите про структуру владения и инвестицию — обсудим, проходите ли вы.',
+              btn: 'Обсудить статус BCS' },
         en: { title: 'Not sure your company meets the BCS criteria?',
-              text: 'We check your ownership structure and the investment, then send the document list with a quote.',
-              btn: 'Check your company for BCS' }
+              text: 'Tell us about your ownership and the investment and we will talk through whether you qualify.',
+              btn: 'Talk through BCS status' }
       },
       'trademark-registration-cyprus-eu': {
         ru: { title: 'Не знаете, регистрировать знак на Кипре или сразу в ЕС?',
-              text: 'Мы проверим ваше обозначение по реестрам и посчитаем оба варианта — с пошлинами и сроками.',
-              btn: 'Получить проверку и смету' },
+              text: 'Расскажите, на каких рынках работаете, — обсудим оба маршрута и что они значат для вас.',
+              btn: 'Обсудить регистрацию знака' },
         en: { title: 'Not sure whether to file in Cyprus or across the EU?',
-              text: 'We search the registers for your sign and price both routes, with fees and timelines.',
-              btn: 'Get a search and a quote' }
+              text: 'Tell us which markets you sell in and we will talk through both routes.',
+              btn: 'Talk through your trademark' }
       },
       'corporate-tax-ip-box-cyprus': {
         ru: { title: 'Не знаете, попадает ли ваш продукт в IP Box?',
-              text: 'Мы разберём ваши активы и расчёты и покажем, какая ставка получается на самом деле.',
-              btn: 'Посчитать ставку под IP Box' },
+              text: 'Расскажите, как устроены ваши активы и разработка, — обсудим, что получается по ставке.',
+              btn: 'Обсудить IP Box' },
         en: { title: 'Not sure whether your product qualifies for IP Box?',
-              text: 'We review your assets and the numbers and show the rate you actually get.',
-              btn: 'Calculate your IP Box rate' }
+              text: 'Tell us how your assets and development are set up and we will talk through the rate.',
+              btn: 'Talk through IP Box' }
       },
       'redomiciliation-cyprus': {
         ru: { title: 'Не уверены, можно ли перевести вашу компанию на Кипр?',
-              text: 'Мы прочитаем закон вашей юрисдикции и пришлём план перевода со сроками и пошлинами.',
-              btn: 'Проверить возможность перевода' },
+              text: 'Расскажите, где компания зарегистрирована сейчас, — обсудим, разрешает ли это её закон.',
+              btn: 'Обсудить перевод компании' },
         en: { title: 'Not sure your company can be moved to Cyprus?',
-              text: 'We read the law of your jurisdiction and send a transfer plan with timelines and fees.',
-              btn: 'Check if a transfer is possible' }
+              text: 'Tell us where the company is registered now and we will talk through whether its law allows it.',
+              btn: 'Talk through the transfer' }
       }
     };
+
+    // Запасные офферы — по направлению услуги. Появились 26.08: скрипт прячет
+    // боковую колонку вместе с плавающей кнопкой на ВСЕХ страницах услуг, а
+    // мид-CTA ставил только там, где написан оффер под слаг. Из-за этого 71
+    // непереписанная страница осталась бы без конверсионной точки в теле.
+    // Оффер страницы всегда сильнее оффера направления: сначала ищем слаг.
+    // По мере переписывания каждая страница получает свой и перестаёт брать общий.
+    var AREA_OFFERS = {
+      'Corporate & Structuring': {
+        ru: { title: 'Не уверены, какая процедура вам нужна?',
+              text: 'Расскажите, что происходит с компанией, — разберёмся и вместе решим, с чего начинать.',
+              btn: 'Обсудить вашу компанию' },
+        en: { title: 'Not sure which procedure you need?',
+              text: 'Tell us what is happening with the company and we will work out where to start.',
+              btn: 'Talk through your company' } },
+      'Publishing & Gamedev': {
+        ru: { title: 'Не знаете, что закрыть до релиза?',
+              text: 'Расскажите про игру или сервис — пройдёмся по вашему случаю и обсудим, что важно успеть.',
+              btn: 'Обсудить запуск продукта' },
+        en: { title: 'Not sure what to close before release?',
+              text: 'Tell us about your game or service and we will go through what matters before launch.',
+              btn: 'Talk through your launch' } },
+      'Employment Law': {
+        ru: { title: 'Сомневаетесь в документах с сотрудниками?',
+              text: 'Расскажите, как у вас устроен найм, — обсудим, что стоит поправить в первую очередь.',
+              btn: 'Обсудить трудовые документы' },
+        en: { title: 'Unsure about your employment paperwork?',
+              text: 'Tell us how you hire and we will talk through what is worth fixing first.',
+              btn: 'Talk through your paperwork' } },
+      'IP & Content': {
+        ru: { title: 'Не уверены, кому принадлежат ваши права?',
+              text: 'Расскажите, как создавался продукт, — обсудим, где цепочка прав может рваться.',
+              btn: 'Обсудить права на продукт' },
+        en: { title: 'Not sure who owns your rights?',
+              text: 'Tell us how the product was built and we will talk through where the chain of rights can break.',
+              btn: 'Talk through your rights' } },
+      'Immigration & Visas': {
+        ru: { title: 'Не уверены, какая виза вам подходит?',
+              text: 'Расскажите про вашу ситуацию — обсудим, на что вы проходите и что для этого нужно.',
+              btn: 'Обсудить вашу визу' },
+        en: { title: 'Not sure which visa fits your case?',
+              text: 'Tell us about your situation and we will talk through what you qualify for and what it takes.',
+              btn: 'Talk through your visa' } },
+      'Licensing & Compliance': {
+        ru: { title: 'Не знаете, нужна ли вам лицензия?',
+              text: 'Расскажите, как устроен ваш продукт, — обсудим, под какое регулирование он попадает.',
+              btn: 'Обсудить лицензию' },
+        en: { title: 'Not sure whether you need a licence?',
+              text: 'Tell us how your product works and we will talk through which rules apply to it.',
+              btn: 'Talk through licensing' } },
+      'Tax & Accounting': {
+        ru: { title: 'Не уверены, что у вас в порядке с налогами и учётом?',
+              text: 'Расскажите, как устроены ваша структура и отчётность, — обсудим, что стоит поправить.',
+              btn: 'Обсудить налоги и учёт' },
+        en: { title: 'Not sure your tax and bookkeeping are in order?',
+              text: 'Tell us how your structure and reporting are set up and we will talk through what to fix.',
+              btn: 'Talk through tax and books' } },
+      'Dispute Resolution': {
+        ru: { title: 'Не знаете, стоит ли идти в спор?',
+              text: 'Расскажите, что произошло, — обсудим варианты и честно скажем, чем это может закончиться.',
+              btn: 'Обсудить ваш спор' },
+        en: { title: 'Not sure the dispute is worth it?',
+              text: 'Tell us what happened and we will talk through the options and how this can realistically end.',
+              btn: 'Talk through your dispute' } },
+      'Events & Tournaments': {
+        ru: { title: 'Не уверены, что мероприятие закрыто по документам?',
+              text: 'Расскажите про формат и площадку — обсудим, что стоит подписать и получить заранее.',
+              btn: 'Обсудить мероприятие' },
+        en: { title: 'Not sure your event is covered on paper?',
+              text: 'Tell us about the format and the venue and we will talk through what to sign in advance.',
+              btn: 'Talk through your event' } },
+      'M&A & Fundraising': {
+        ru: { title: 'Не уверены, что компания готова к сделке?',
+              text: 'Расскажите, какая сделка впереди, — обсудим, что покупатель увидит первым.',
+              btn: 'Обсудить сделку' },
+        en: { title: 'Not sure the company is deal-ready?',
+              text: 'Tell us what deal is ahead and we will talk through what a buyer will see first.',
+              btn: 'Talk through the deal' } },
+      'Advisory & Ongoing Support': {
+        ru: { title: 'Не знаете, какой формат поддержки нужен?',
+              text: 'Расскажите, какие задачи у вас повторяются, — обсудим, как это удобнее вести.',
+              btn: 'Обсудить формат работы' },
+        en: { title: 'Not sure what kind of support you need?',
+              text: 'Tell us which tasks keep coming back and we will talk through how best to handle them.',
+              btn: 'Talk through the format' } }
+    };
+
+    // Направление страницы берём из микроразметки: поле serviceType есть на всех
+    // страницах услуг и в обеих локалях (проверено 26.08). Содержимое <script>
+    // браузер не раскодирует, поэтому &amp; возвращаем в & руками.
+    function направление() {
+      var ss = document.querySelectorAll('script[type="application/ld+json"]');
+      for (var i = 0; i < ss.length; i++) {
+        try {
+          var найти = function (o) {
+            if (!o || typeof o !== 'object') return null;
+            if (typeof o.serviceType === 'string') return o.serviceType;
+            for (var k in o) { var r = найти(o[k]); if (r) return r; }
+            return null;
+          };
+          var v = найти(JSON.parse(ss[i].textContent));
+          if (v) return v.replace(/&amp;/g, '&').trim();
+        } catch (e) {}
+      }
+      return null;
+    }
+
     var slug = location.pathname.replace(/\/+$/, '').split('/').pop();
-    var offer = (OFFERS[slug] || {})[LANG] || null;
+    var offer = (OFFERS[slug] || {})[LANG] ||
+                (AREA_OFFERS[направление()] || {})[LANG] || null;
 
     var FORM_HREF = '#wf-form-Discuss-the-Task-Form';
     var BTN_CLASS = 'button w-variant-1b7e3f2c-b36a-3f03-560c-40dd15c0058c w-inline-block';
@@ -634,6 +783,77 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
       }
     });
 
+    // ------------------- 3б. Широкий блок карточек из блока 2
+    // Появился в версии 20 по выбору Алисы 27.08. Задача: показать сравнение
+    // нескольких режимов, стран или вариантов НЕ таблицей. Таблица годится,
+    // когда справа короткое значение; когда справа полтора предложения, она
+    // превращается в стену текста — так вышло с «Где ещё нужна лицензия».
+    //
+    // Разметка в CMS: H3 — заголовок раздела, дальше H4 на каждую карточку,
+    // под каждым H4 — один абзац. H4 внутри блока 2 больше ничем не занят:
+    // вопросы FAQ с волны 1 уехали в коллекцию-спутник.
+    //
+    // Собирается тем же cardList/card, что и блок «Когда нужна», поэтому
+    // выглядит один в один: карточки в ряд во всю ширину, с нумерацией.
+    safe('широкий блок из блока 2', function () {
+      if (!rt2 || !b2sec) return;
+      var дети = Array.prototype.slice.call(rt2.children);
+      var начало = -1;
+      for (var i = 0; i < дети.length; i++) {
+        if (дети[i].tagName !== 'H3') continue;
+        // ⚠️ FAQ размечен точно так же — H3 «FAQ» и вопросы H4 — и без этой
+        // проверки широкий блок забирал его себе: заголовок секции становился
+        // «FAQ», вопросы превращались в карточки, аккордеон исчезал совсем.
+        // Поймано Алисой 27.08: она спросила, проверяли ли версию 20 на всех
+        // трёх страницах батча 0 или только на той, где была таблица.
+        // Проверяли на одной. На двух других ломалось.
+        if ((дети[i].textContent || '').trim().toLowerCase() === FAQ_HEAD.toLowerCase()) continue;
+        // раздел опознаём по тому, что сразу за ним идут H4, а не список
+        for (var j = i + 1; j < дети.length; j++) {
+          if (дети[j].tagName === 'H3') break;
+          if (дети[j].tagName === 'H4') { начало = i; break; }
+        }
+        if (начало >= 0) break;
+      }
+      if (начало < 0) return;
+
+      var заголовок = (дети[начало].textContent || '').trim();
+      // Сноска с источниками идёт следом за последним H4 и без этой проверки
+      // уезжает внутрь последней карточки — поймано замером 27.08.
+      function сноска(n) {
+        if (n.tagName !== 'P') return false;
+        if (/^\s*(Источники|Sources)\s*[:\u2014-]/i.test(n.textContent || '')) return true;
+        return !!n.querySelector('a[href^="http"]');
+      }
+
+      var карточки = [], текущая = null, съесть = [дети[начало]];
+      for (var k = начало + 1; k < дети.length; k++) {
+        var n = дети[k];
+        if (n.tagName === 'H3') break;                 // раздел кончился
+        if (сноска(n)) break;                          // сноска остаётся в тексте
+        съесть.push(n);
+        if (n.tagName === 'H4') {
+          текущая = { title: (n.textContent || '').trim(), body: [] };
+          карточки.push(текущая);
+        } else if (текущая) {
+          текущая.body.push(n);
+        }
+      }
+      if (карточки.length < 2) return;                 // одна карточка — не блок
+
+      var сек = section('is-s-wide', заголовок);
+      var лист = cardList();
+      карточки.forEach(function (c) {
+        лист._list.appendChild(card(c.title, c.body, 'heading-style-h4 line-height-94'));
+      });
+      сек._host.appendChild(лист);
+      b2sec.parentNode.insertBefore(сек, b2sec.nextSibling);
+
+      // Исходник убираем всегда: иначе раздел останется в тексте вторым
+      // экземпляром — ровно та ошибка, что вылезла с FAQ в версии 15.
+      съесть.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+    });
+
     // ------------------- 4. Таблицы и картинки в текстовых блоках
     safe('таблицы и картинки', function () {
       [rt1, rt2].forEach(function (rt) {
@@ -654,7 +874,7 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
           // «Сроки в таблице — из закона о компаниях Кипра…» — и двумя абзацами.
           // Идём по абзацам подряд и помечаем все, что похожи на сноску.
           var nx = tb.nextElementSibling, marked = 0;
-          for (var hop = 0; nx && hop < 4; hop++) {
+          for (var hop = 0; nx && hop < 8; hop++) {
             if (nx.tagName !== 'P') { if (marked) break; nx = nx.nextElementSibling; continue; }
             var txt = nx.textContent || '';
             var head = /^\s*(Источники|Sources)\s*[:—-]/i.test(txt);
@@ -672,6 +892,32 @@ table.s-table td:first-child { width: 55%; padding-right: 2rem; }
           tb.parentNode.insertBefore(box, tb);
           box.appendChild(tb);
         });
+
+        // ---- Сноска без таблицы ----------------------------------------
+        // До версии 19 пометка сноски жила ВНУТРИ обхода таблиц: нет таблицы —
+        // сноска не помечалась вовсе и рисовалась обычным текстом в полный
+        // кегль. Поймано 27.08 Алисой на странице ESOP, у которой по пресету
+        // «Документы» таблицы сравнения нет. Это касается всех типов без
+        // таблицы — «Документы», «Аудит», «Споры», «Сопровождение», то есть
+        // сорока с лишним страниц волны 1.
+        // Теперь сноска опознаётся сама по себе: абзац с зачином
+        // «Источники»/«Sources» и все идущие за ним абзацы со ссылками наружу.
+        (function () {
+          var абзацы = rt.children, начали = false, помечено = 0;
+          for (var i = 0; i < абзацы.length; i++) {
+            var n = абзацы[i];
+            if (n.tagName !== 'P') { if (начали) break; continue; }
+            var txt = n.textContent || '';
+            var зачин = /^\s*(Источники|Sources)\s*[:\u2014-]/i.test(txt);
+            var внешняя = !!n.querySelector('a[href^="http"]');
+            if (!начали && !зачин) continue;      // ждём начала сноски
+            if (начали && !внешняя && !зачин) break;
+            начали = true;
+            if (n.className.indexOf('s-sources') < 0) n.className += ' s-sources';
+            помечено++;
+            if (помечено > 8) break;
+          }
+        })();
 
         Array.prototype.forEach.call(rt.querySelectorAll('img'), function (img) {
           if (img.closest('.s-table-img')) return;
