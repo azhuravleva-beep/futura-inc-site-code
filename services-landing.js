@@ -1,9 +1,17 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 21, 28.08.2026
+   Версия 22, 02.09.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
+
+   Версия 22: FAQ цепляется к секции «Смежные услуги» по её id 07-related.
+   На шаблоне появилась вторая секция с классом .s-related — блок связок хаба
+   «Где мы это делаем», и он стоит выше. Скрипт вставлял FAQ перед первой
+   найденной, поэтому на bcs-status-cyprus, trademark-registration-cyprus-eu,
+   corporate-tax-ip-box-cyprus и redomiciliation-cyprus FAQ поднимался в
+   середину страницы. На остальных 77 страницах FAQ приходит из коллекции и
+   этот код не работает вовсе.
 
    Версия 21: широкий блок занимает место блока «Что вы получаете» там, где
    того нет (типы «Споры» и «Сопровождение»). Правка по предпросмотру
@@ -1022,7 +1030,15 @@ table.s-table td { font-weight: 500; }
 
       wrap.appendChild(list); sec._host.appendChild(wrap);
 
-      var before = document.querySelector('.s-related') || document.querySelector('.is-services-form-section');
+      // Якорь — именно секция «Смежные услуги», а не первая попавшаяся
+      // .s-related. С 02.09 на шаблоне две секции с этим классом: выше по
+      // странице встал блок связок хаба («Где мы это делаем»), и querySelector
+      // стал возвращать его. FAQ уезжал сразу за «Этапы работы», выше кейсов и
+      // лидеров, на четырёх страницах, где его собирает скрипт. У соседней
+      // секции есть собственный id, по нему и цепляемся.
+      var before = document.getElementById('07-related')
+                || document.querySelector('.s-related')
+                || document.querySelector('.is-services-form-section');
       if (before && before.parentNode) before.parentNode.insertBefore(sec, before);
 
       dropSource();
