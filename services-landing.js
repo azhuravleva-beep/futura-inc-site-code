@@ -1,9 +1,17 @@
 /* =====================================================================
    futura.inc — сборщик блоков лендинга на страницах услуг
-   Версия 22, 02.09.2026
+   Версия 23, 03.09.2026
 
    Подключается в Webflow: Services Template -> Before </body> tag,
    одной строкой <script src="...">. Стили вставляет сам.
+
+   Версия 23: направление страницы определяется по хлебной крошке, а не по
+   микроразметке. 03.09 русская локаль шаблона получила своё значение разметки
+   с русским названием направления ('Налоги и бухгалтерия' вместо
+   'Tax & Accounting'), ключ запасного оффера перестал находиться, и мид-CTA
+   вместе с кнопкой на мобильном исчез с 93 русских страниц услуг. Слаг в
+   крошке (/service-areas/tax-and-accounting) одинаков в обеих локалях.
+   Разметка осталась запасным путём — через таблицу названий на двух языках.
 
    Версия 22: FAQ цепляется к секции «Смежные услуги» по её id 07-related.
    На шаблоне появилась вторая секция с классом .s-related — блок связок хаба
@@ -551,77 +559,77 @@ table.s-table td { font-weight: 500; }
     // Оффер страницы всегда сильнее оффера направления: сначала ищем слаг.
     // По мере переписывания каждая страница получает свой и перестаёт брать общий.
     var AREA_OFFERS = {
-      'Corporate & Structuring': {
+      'corporate-and-structuring': {  // Corporate & Structuring
         ru: { title: 'Не уверены, какая процедура вам нужна?',
               text: 'Расскажите, что происходит с компанией, — разберёмся и вместе решим, с чего начинать.',
               btn: 'Обсудить вашу компанию' },
         en: { title: 'Not sure which procedure you need?',
               text: 'Tell us what is happening with the company and we will work out where to start.',
               btn: 'Talk through your company' } },
-      'Publishing & Gamedev': {
+      'publishing-and-gamedev': {  // Publishing & Gamedev
         ru: { title: 'Не знаете, что закрыть до релиза?',
               text: 'Расскажите про игру или сервис — пройдёмся по вашему случаю и обсудим, что важно успеть.',
               btn: 'Обсудить запуск продукта' },
         en: { title: 'Not sure what to close before release?',
               text: 'Tell us about your game or service and we will go through what matters before launch.',
               btn: 'Talk through your launch' } },
-      'Employment Law': {
+      'employment-law': {  // Employment Law
         ru: { title: 'Сомневаетесь в документах с сотрудниками?',
               text: 'Расскажите, как у вас устроен найм, — обсудим, что стоит поправить в первую очередь.',
               btn: 'Обсудить трудовые документы' },
         en: { title: 'Unsure about your employment paperwork?',
               text: 'Tell us how you hire and we will talk through what is worth fixing first.',
               btn: 'Talk through your paperwork' } },
-      'IP & Content': {
+      'ip-and-content': {  // IP & Content
         ru: { title: 'Не уверены, кому принадлежат ваши права?',
               text: 'Расскажите, как создавался продукт, — обсудим, где цепочка прав может рваться.',
               btn: 'Обсудить права на продукт' },
         en: { title: 'Not sure who owns your rights?',
               text: 'Tell us how the product was built and we will talk through where the chain of rights can break.',
               btn: 'Talk through your rights' } },
-      'Immigration & Visas': {
+      'immigration-and-visas': {  // Immigration & Visas
         ru: { title: 'Не уверены, какая виза вам подходит?',
               text: 'Расскажите про вашу ситуацию — обсудим, на что вы проходите и что для этого нужно.',
               btn: 'Обсудить вашу визу' },
         en: { title: 'Not sure which visa fits your case?',
               text: 'Tell us about your situation and we will talk through what you qualify for and what it takes.',
               btn: 'Talk through your visa' } },
-      'Licensing & Compliance': {
+      'licensing-and-compliance': {  // Licensing & Compliance
         ru: { title: 'Не знаете, нужна ли вам лицензия?',
               text: 'Расскажите, как устроен ваш продукт, — обсудим, под какое регулирование он попадает.',
               btn: 'Обсудить лицензию' },
         en: { title: 'Not sure whether you need a licence?',
               text: 'Tell us how your product works and we will talk through which rules apply to it.',
               btn: 'Talk through licensing' } },
-      'Tax & Accounting': {
+      'tax-and-accounting': {  // Tax & Accounting
         ru: { title: 'Не уверены, что у вас в порядке с налогами и учётом?',
               text: 'Расскажите, как устроены ваша структура и отчётность, — обсудим, что стоит поправить.',
               btn: 'Обсудить налоги и учёт' },
         en: { title: 'Not sure your tax and bookkeeping are in order?',
               text: 'Tell us how your structure and reporting are set up and we will talk through what to fix.',
               btn: 'Talk through tax and books' } },
-      'Dispute Resolution': {
+      'dispute-resolution': {  // Dispute Resolution
         ru: { title: 'Не знаете, стоит ли идти в спор?',
               text: 'Расскажите, что произошло, — обсудим варианты и честно скажем, чем это может закончиться.',
               btn: 'Обсудить ваш спор' },
         en: { title: 'Not sure the dispute is worth it?',
               text: 'Tell us what happened and we will talk through the options and how this can realistically end.',
               btn: 'Talk through your dispute' } },
-      'Events & Tournaments': {
+      'events-and-tournaments': {  // Events & Tournaments
         ru: { title: 'Не уверены, что мероприятие закрыто по документам?',
               text: 'Расскажите про формат и площадку — обсудим, что стоит подписать и получить заранее.',
               btn: 'Обсудить мероприятие' },
         en: { title: 'Not sure your event is covered on paper?',
               text: 'Tell us about the format and the venue and we will talk through what to sign in advance.',
               btn: 'Talk through your event' } },
-      'M&A & Fundraising': {
+      'ma-and-fundraising': {  // M&A & Fundraising
         ru: { title: 'Не уверены, что компания готова к сделке?',
               text: 'Расскажите, какая сделка впереди, — обсудим, что покупатель увидит первым.',
               btn: 'Обсудить сделку' },
         en: { title: 'Not sure the company is deal-ready?',
               text: 'Tell us what deal is ahead and we will talk through what a buyer will see first.',
               btn: 'Talk through the deal' } },
-      'Advisory & Ongoing Support': {
+      'advisory-and-ongoing-support': {  // Advisory & Ongoing Support
         ru: { title: 'Не знаете, какой формат поддержки нужен?',
               text: 'Расскажите, какие задачи у вас повторяются, — обсудим, как это удобнее вести.',
               btn: 'Обсудить формат работы' },
@@ -630,10 +638,56 @@ table.s-table td { font-weight: 500; }
               btn: 'Talk through the format' } }
     };
 
-    // Направление страницы берём из микроразметки: поле serviceType есть на всех
-    // страницах услуг и в обеих локалях (проверено 26.08). Содержимое <script>
-    // браузер не раскодирует, поэтому &amp; возвращаем в & руками.
+    // Направление страницы берём из ХЛЕБНОЙ КРОШКИ — из ссылки на своё
+    // направление. Слаг в ней один и тот же в обеих локалях
+    // (/service-areas/tax-and-accounting и /ru/service-areas/tax-and-accounting),
+    // поэтому ключ не зависит от языка страницы.
+    //
+    // Раньше направление читалось из микроразметки, из поля serviceType, и это
+    // сломалось 03.09: у русской локали шаблона появилось своё значение
+    // разметки, привязанное к русскому названию направления. До этого дня
+    // русская локаль наследовала английскую разметку, и ключ случайно совпадал.
+    // Стало 'Налоги и бухгалтерия' вместо 'Tax & Accounting' — ни один ключ
+    // не нашёлся, и мид-CTA вместе с кнопкой на мобильном исчез с 93 русских
+    // страниц. Английские не пострадали, кипрские пять тоже: у них свой оффер
+    // по слагу. Крошка от языка не зависит и от правок разметки не страдает.
     function направление() {
+      var a = document.querySelector('a.breadcrumbs__link[href*="/service-areas/"]');
+      if (!a) return null;
+      var href = (a.getAttribute('href') || '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+      return href.split('/service-areas/').pop() || null;
+    }
+
+    // Запасной путь, если крошки на странице не окажется: то же направление
+    // из микроразметки. Названия сведены к слагам, чтобы ключ был один и тот же.
+    var AREA_NAMES = {
+      'Corporate & Structuring': 'corporate-and-structuring',
+      'Корпоративное структурирование': 'corporate-and-structuring',
+      'Publishing & Gamedev': 'publishing-and-gamedev',
+      'Паблишинг и геймдев': 'publishing-and-gamedev',
+      'Employment Law': 'employment-law',
+      'Трудовое право': 'employment-law',
+      'IP & Content': 'ip-and-content',
+      'IP и контент': 'ip-and-content',
+      'Immigration & Visas': 'immigration-and-visas',
+      'Иммиграция и визы': 'immigration-and-visas',
+      'Licensing & Compliance': 'licensing-and-compliance',
+      'Лицензирование и комплаенс': 'licensing-and-compliance',
+      'Tax & Accounting': 'tax-and-accounting',
+      'Налоги и бухгалтерия': 'tax-and-accounting',
+      'Dispute Resolution': 'dispute-resolution',
+      'Разрешение споров': 'dispute-resolution',
+      'Events & Tournaments': 'events-and-tournaments',
+      'Мероприятия и турниры': 'events-and-tournaments',
+      'M&A & Fundraising': 'ma-and-fundraising',
+      'Слияния, поглощения и привлечение инвестиций': 'ma-and-fundraising',
+      'Advisory & Ongoing Support': 'advisory-and-ongoing-support',
+      'Консалтинг и сопровождение': 'advisory-and-ongoing-support'
+    };
+
+    // Содержимое <script> браузер не раскодирует, поэтому &amp; возвращаем в &
+    // руками — Webflow экранирует амперсанд при подстановке из CMS.
+    function направление_из_разметки() {
       var ss = document.querySelectorAll('script[type="application/ld+json"]');
       for (var i = 0; i < ss.length; i++) {
         try {
@@ -644,15 +698,16 @@ table.s-table td { font-weight: 500; }
             return null;
           };
           var v = найти(JSON.parse(ss[i].textContent));
-          if (v) return v.replace(/&amp;/g, '&').trim();
+          if (v) return AREA_NAMES[v.replace(/&amp;/g, '&').trim()] || null;
         } catch (e) {}
       }
       return null;
     }
 
     var slug = location.pathname.replace(/\/+$/, '').split('/').pop();
+    var область = направление() || направление_из_разметки();
     var offer = (OFFERS[slug] || {})[LANG] ||
-                (AREA_OFFERS[направление()] || {})[LANG] || null;
+                (AREA_OFFERS[область] || {})[LANG] || null;
 
     var FORM_HREF = '#wf-form-Discuss-the-Task-Form';
     var BTN_CLASS = 'button w-variant-1b7e3f2c-b36a-3f03-560c-40dd15c0058c w-inline-block';
