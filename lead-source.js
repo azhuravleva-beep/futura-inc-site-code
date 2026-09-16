@@ -135,7 +135,9 @@
 
     setField(form, "Source-Page", window.location.href);
     setField(form, "Source-UTM", sourceLabel(touch));
-    setField(form, "Source-Referrer", touch.referrer || document.referrer || "");
+    // Только внешний реферер: переход с futura.law на futura.inc — не источник,
+    // и колонка referrer в реестре не должна выдавать его за источник.
+    setField(form, "Source-Referrer", touch.referrer || externalReferrer());
 
     // Ниже — в raw_json, для разбора руками.
     setField(form, "Source-First-At", touch.at || "");
