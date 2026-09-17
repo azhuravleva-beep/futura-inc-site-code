@@ -28,7 +28,11 @@ function run({ url, referrer, store }) {
       createElement: makeEl,
     },
     window: {
-      location: { href: url, search: new URL(url).search },
+      location: {
+        href: url,
+        search: new URL(url).search,
+        pathname: new URL(url).pathname,
+      },
       localStorage: {
         getItem: k => (k in storage ? storage[k] : null),
         setItem: (k, v) => { storage[k] = v; },
@@ -64,6 +68,7 @@ r = run({ url: "https://www.futura.inc/contacts", referrer: "", store: kept });
 check("Source-UTM остался Perplexity", r.fields["Source-UTM"], "perplexity.ai");
 check("Source-Page — текущая", r.fields["Source-Page"], "https://www.futura.inc/contacts");
 check("Source-First-Page — та, с которой пришёл", r.fields["Source-First-Page"], "https://www.futura.inc/ru/jurisdictions/oman");
+check("Source-Landing — посадочная первого визита", r.fields["Source-Landing"], "/ru/jurisdictions/oman");
 
 console.log("\n— 3. UTM-метка из рассылки");
 r = run({ url: "https://www.futura.inc/?utm_source=telegram&utm_medium=post&utm_campaign=cyprus", referrer: "", store: {} });

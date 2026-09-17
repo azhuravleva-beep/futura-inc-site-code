@@ -11,6 +11,7 @@
  *   Source-Page      → колонка page_url
  *   Source-UTM       → колонка utm_source
  *   Source-Referrer  → колонка referrer
+ *   Source-Landing   → в заметки карточки Asana (triage_decision)
  * Остальные поля оседают в raw_json и видны при разборе лида.
  *
  * Подключение — одной строкой в Webflow, Site settings → Custom code →
@@ -92,6 +93,9 @@
     var touch = {
       at: new Date().toISOString(),
       page: window.location.href,
+      // Посадочная страница в том же виде, что писал прежний скрипт:
+      // машина переносит Source-Landing в заметки карточки Asana.
+      landing: window.location.pathname + window.location.search,
       referrer: externalReferrer(),
       hint: hint,
       utm: utm
@@ -138,6 +142,9 @@
     // Только внешний реферер: переход с futura.law на futura.inc — не источник,
     // и колонка referrer в реестре не должна выдавать его за источник.
     setField(form, "Source-Referrer", touch.referrer || externalReferrer());
+
+    // Посадочная первого визита — её читает сборка карточки в Asana.
+    setField(form, "Source-Landing", touch.landing || (window.location.pathname + window.location.search));
 
     // Ниже — в raw_json, для разбора руками.
     setField(form, "Source-First-At", touch.at || "");
