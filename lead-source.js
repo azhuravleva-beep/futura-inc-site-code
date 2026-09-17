@@ -141,7 +141,9 @@
     setField(form, "Source-UTM", sourceLabel(touch));
     // Только внешний реферер: переход с futura.law на futura.inc — не источник,
     // и колонка referrer в реестре не должна выдавать его за источник.
-    setField(form, "Source-Referrer", touch.referrer || externalReferrer());
+    // Когда внешнего реферера нет, пишем это словами, а не пустотой: пустая
+    // ячейка читается как «не сработало», «прямой заход» — как факт.
+    setField(form, "Source-Referrer", touch.referrer || externalReferrer() || "прямой заход");
 
     // Посадочная первого визита — её читает сборка карточки в Asana.
     setField(form, "Source-Landing", touch.landing || (window.location.pathname + window.location.search));

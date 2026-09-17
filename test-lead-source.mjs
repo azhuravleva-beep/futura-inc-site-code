@@ -82,7 +82,7 @@ check("Source-UTM", r.fields["Source-UTM"], "yandex-search");
 console.log("\n— 5. Внутренний переход не считается источником");
 r = run({ url: "https://www.futura.inc/contacts", referrer: "https://www.futura.law/services/x", store: {} });
 check("Source-UTM", r.fields["Source-UTM"], "direct");
-check("Source-Referrer пуст", r.fields["Source-Referrer"], "");
+check("Source-Referrer — прямой заход", r.fields["Source-Referrer"], "прямой заход");
 
 console.log("\n— 6. Приватное окно: localStorage недоступен, скрипт не падает");
 try {
