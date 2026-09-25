@@ -44,8 +44,16 @@ https://purge.jsdelivr.net/gh/azhuravleva-beep/futura-inc-site-code@main/service
 «прямой заход» и врёт. Подключён site-wide (footer) на futura.inc, futura.law
 и futura.ae через Webflow API, registered script `leadsource`.
 
+Он же размечает кнопки «Calendly». У брони нет формы: единственное, что доедет
+с сайта до лид-машины, — метки в адресе ссылки. Calendly кладёт их в `tracking`
+брони, дверь `calendly` перекладывает `utm_source` в ту же колонку реестра, что
+и формы. Поэтому в `href` дописываются `utm_source` (та же подпись, что в форме),
+`utm_medium=site` и `utm_content` — путь страницы, с которой нажали кнопку.
+Метку, проставленную руками (ссылка в рассылке, аутриче, подписи), скрипт
+не трогает.
+
 Проверки: `node test-lead-source.mjs` — Perplexity, возврат прямым заходом,
-UTM, ysclid, внутренний переход, приватное окно.
+UTM, ysclid, внутренний переход, приватное окно, кнопка Calendly.
 
 ### ⚠️ Порядок обновления: сначала файл, сразу следом версия в Webflow
 

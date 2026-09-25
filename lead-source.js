@@ -14,6 +14,12 @@
  *   Source-Landing   → в заметки карточки Asana (triage_decision)
  * Остальные поля оседают в raw_json и видны при разборе лида.
  *
+ * Запись на звонок — тоже заявка, но формы у неё нет: человек уходит на
+ * calendly.com, и единственное, что доедет оттуда до лид-машины, — метки
+ * в адресе самой ссылки. Calendly кладёт их в `tracking` брони, дверь
+ * `calendly` перекладывает `utm_source` в ту же колонку реестра, что и формы.
+ * Поэтому метки дописываются прямо в href кнопок «Calendly» (см. tagLink).
+ *
  * Подключение — одной строкой в Webflow, Site settings → Custom code →
  * Footer code, на каждом сайте:
  *   <script src="https://cdn.jsdelivr.net/gh/azhuravleva-beep/futura-inc-site-code@main/lead-source.js"></script>
@@ -123,6 +129,54 @@
     return "direct";
   }
 
+  // --- ссылки на Calendly ---------------------------------------------------
+
+  /** Хост ссылки — сам calendly.com или его поддомен. */
+  var CALENDLY_HOST_RE = /(^|\.)calendly\.com$/i;
+
+  /**
+   * Дописывает в ссылку на Calendly метки источника.
+   *
+   * Метку, проставленную руками (ссылка из рассылки, аутрича или подписи),
+   * не трогаем: она точнее нашей догадки.
+   */
+  function tagLink(link, touch) {
+    if (!link || !link.getAttribute) return;
+    var href = link.getAttribute("href") || "";
+    if (href.indexOf("calendly.com") < 0) return;
+
+    var url;
+    try {
+      url = new URL(href, window.location.href);
+    } catch (e) {
+      return;
+    }
+    if (!CALENDLY_HOST_RE.test(url.hostname)) return;
+
+    function set(key, value) {
+      if (!value) return;
+      if (url.searchParams.get(key)) return;
+      url.searchParams.set(key, value);
+    }
+
+    // Та же подпись, что уходит в формы, — чтобы колонка источника в реестре
+    // читалась одинаково для заявки с сайта и для брони.
+    set("utm_source", sourceLabel(touch));
+    set("utm_medium", (touch.utm && touch.utm.utm_medium) || "site");
+    set("utm_campaign", touch.utm && touch.utm.utm_campaign);
+    // У брони нет поля Source-Page, а знать, с какой страницы пошли на звонок,
+    // нужно ровно так же — кладём путь страницы в utm_content.
+    set("utm_content", window.location.pathname);
+    set("utm_term", touch.utm && touch.utm.utm_term);
+
+    link.setAttribute("href", url.toString());
+  }
+
+  function tagLinks(touch) {
+    var links = document.querySelectorAll('a[href*="calendly.com"]');
+    for (var i = 0; i < links.length; i++) tagLink(links[i], touch);
+  }
+
   function setField(form, name, value) {
     var field = form.querySelector('input[name="' + name + '"]');
     if (!field) {
@@ -161,6 +215,7 @@
     var touch = firstTouch();
     var forms = document.querySelectorAll("form");
     for (var i = 0; i < forms.length; i++) fill(forms[i], touch);
+    tagLinks(touch);
   }
 
   function start() {
@@ -184,6 +239,18 @@
       "submit",
       function (e) {
         if (e.target && e.target.tagName === "FORM") fill(e.target, firstTouch());
+      },
+      true
+    );
+
+    // То же для брони: адрес страницы мог смениться на SPA-переходе, а ссылку
+    // мог подставить чужой скрипт уже после наблюдателя.
+    document.addEventListener(
+      "click",
+      function (e) {
+        var node = e.target;
+        while (node && node.tagName !== "A") node = node.parentNode;
+        if (node && node.tagName === "A") tagLink(node, firstTouch());
       },
       true
     );
