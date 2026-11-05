@@ -1,6 +1,6 @@
 // Стенд: подсовываем скрипту поддельные document/window и смотрим, что вышло.
 import fs from "node:fs";
-const code = fs.readFileSync("./contact-signals-1.0.1.js", "utf8");
+const code = fs.readFileSync("./contact-signals-1.0.2.js", "utf8");
 
 function makeLink(href) {
   let h = href;
@@ -70,7 +70,7 @@ ok(c.href.includes("?cc=a@b.c&subject="), "второй параметр чер�
 console.log("\nЦель на копирование:");
 let r = run({ hostname: "www.futura.law", title: "Контакты", selection: "пишите на Hello@Futura.ae", pathname: "/ru/contacts" });
 r.ymCalls.length = 0; r.listeners["copy"]();
-ok(r.ymCalls.some(x => x[0] === 113005067 && x[1] === "reachGoal" && x[2] === "email_copy"),
+ok(r.ymCalls.some(x => x[0] === 111386861 && x[1] === "reachGoal" && x[2] === "email_copy"),
    "на law летит цель — и на странице без темы тоже");
 
 let r2 = run({ hostname: "www.futura.inc", title: "Услуга", selection: "просто текст", pathname: "/services/x" });
