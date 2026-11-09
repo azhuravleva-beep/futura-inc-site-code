@@ -6,7 +6,7 @@ import vm from "node:vm";
 
 const read = (f) => fs.readFileSync(new URL(f, import.meta.url), "utf8");
 const HEAD = read("./_futurameta-head-block.js");      // снят с живого сайта 06.11.2026
-const FALLBACK = read("./meta-pixel-1.2.0.js");
+const FALLBACK = read("./meta-pixel-1.3.0.js");
 const EVENTS = read("./webinar-meta-events-1.1.0.js");
 
 const SITE_ID = "69b915fc76acca0d89cbd22b";

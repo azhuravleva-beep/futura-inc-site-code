@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 
-const CODE = fs.readFileSync(new URL("./meta-pixel-1.2.0.js", import.meta.url), "utf8");
+const CODE = fs.readFileSync(new URL("./meta-pixel-1.3.0.js", import.meta.url), "utf8");
 const SITE_ID = "69b915fc76acca0d89cbd22b";
 const SIGN_UP = "Event Sign Up Form";
 
@@ -30,6 +30,10 @@ function build({ consent = null, metaLoaded = null, foreignFbq = false } = {}) {
   sandbox.location = { href: "https://www.futura.law/ru/events/x" };
   sandbox.jQuery = { ajaxPrefilter(_t, fn) { prefilters.push(fn); } };
   sandbox.Webflow = [];
+  // 1.3.0 проверяет, не подвесил ли пиксель контроллер из головы сайта.
+  const timers = [];
+  sandbox.setTimeout = (fn) => { timers.push(fn); return timers.length; };
+  sandbox.performance = { getEntriesByType: () => [{ name: "https://connect.facebook.net/signals/config/1249807613110031" }] };
   if (consent) sandbox.FuturaConsent = consent;
   if (metaLoaded !== null) sandbox.FuturaMeta = { status: () => ({ loaded: metaLoaded }) };
   if (foreignFbq) sandbox.fbq = function () {};
