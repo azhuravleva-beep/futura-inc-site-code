@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 
-const CODE = fs.readFileSync(new URL("./meta-pixel-1.1.0.js", import.meta.url), "utf8");
+const CODE = fs.readFileSync(new URL("./meta-pixel-1.2.0.js", import.meta.url), "utf8");
 const SITE_ID = "69b915fc76acca0d89cbd22b";
 const SIGN_UP = "Event Sign Up Form";
 
@@ -62,7 +62,7 @@ function build({ consent = null, metaLoaded = null, foreignFbq = false } = {}) {
   };
 }
 
-const events = (t, kind) => t.filter((a) => a[0] === "trackSingle" && a[2] === kind).length;
+const events = (t, kind) => t.filter((a) => a[0] === "track" && a[1] === kind).length;
 let failures = 0;
 function check(label, actual, expected) {
   const pass = actual === expected;

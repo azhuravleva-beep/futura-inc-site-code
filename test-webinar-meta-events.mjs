@@ -6,8 +6,8 @@ import vm from "node:vm";
 
 const read = (f) => fs.readFileSync(new URL(f, import.meta.url), "utf8");
 const HEAD = read("./_futurameta-head-block.js");      // снят с живого сайта 06.11.2026
-const FALLBACK = read("./meta-pixel-1.1.0.js");
-const EVENTS = read("./webinar-meta-events-1.0.0.js");
+const FALLBACK = read("./meta-pixel-1.2.0.js");
+const EVENTS = read("./webinar-meta-events-1.1.0.js");
 
 const SITE_ID = "69b915fc76acca0d89cbd22b";
 const SIGN_UP = "Event Sign Up Form";
@@ -91,8 +91,10 @@ function build({ consent, withAnchor = true, withForm = true, delayPixel = false
   };
 }
 
+// Теперь обе формы: track/trackCustom кладут имя события вторым аргументом.
 const count = (t, name) =>
-  t.filter((a) => (a[0] === "trackSingleCustom" || a[0] === "trackSingle") && a[2] === name).length;
+  t.filter((a) => ((a[0] === "trackCustom" || a[0] === "track") && a[1] === name)
+                || ((a[0] === "trackSingleCustom" || a[0] === "trackSingle") && a[2] === name)).length;
 
 let failures = 0;
 function check(label, actual, expected) {
