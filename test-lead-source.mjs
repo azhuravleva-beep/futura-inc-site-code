@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 
-const CODE = fs.readFileSync(process.env.HOME + "/futura-inc-site-code/lead-source.js", "utf8");
+const CODE = fs.readFileSync(new URL("./lead-source.js", import.meta.url), "utf8");
 
 function makeEl(tag) {
   return { tagName: tag.toUpperCase(), type: "", name: "", value: "", children: [],
