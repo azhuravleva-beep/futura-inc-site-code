@@ -140,6 +140,50 @@
    * Метку, проставленную руками (ссылка из рассылки, аутрича или подписи),
    * не трогаем: она точнее нашей догадки.
    */
+
+  // FT1 is a bounded transport envelope, not a search keyword or a campaign.
+  // Only Law opts into the new format; other sites retain the existing behaviour.
+  var CONTEXT_HOST = /^(www\.)?futura\.law$/i.test(window.location.hostname);
+  var generatedContent = new WeakMap();
+  var analyticsContext = {}, analyticsEpoch = 0, analyticsRequestedAt = 0;
+  var GA_MEASUREMENT = "G-JTHE62BSHM";
+  function analyticsAllowed() {
+    try { return !!(window.FuturaConsent && window.FuturaConsent.analyticsAllowed()); }
+    catch (e) { return false; }
+  }
+  function pathOnly(value) {
+    try {
+      var u = new URL(value || "", window.location.href);
+      if (u.origin !== window.location.origin || !value) return "";
+      return u.pathname;
+    } catch (e) { return ""; }
+  }
+  function bookingContext(touch) {
+    var p = window.location.pathname, l = pathOnly(touch.landing || touch.page);
+    var a = typeof touch.at === "string" && /^\d{4}-\d\d-\d\dT/.test(touch.at) ? touch.at : "";
+    var ga = analyticsAllowed() ? analyticsContext : {};
+    var candidates = [[p,l,a,ga.client_id || "",ga.session_id || ""],[p,l,a],[p,l]];
+    for (var i=0;i<candidates.length;i++) {
+      var value="FT1:"+JSON.stringify(candidates[i]);
+      if(value.length<=255)return value;
+    }
+    // Never truncate a path into a misleading URL; legacy exit path is the fallback.
+    return p.length<=255 ? p : "";
+  }
+  function refreshAnalytics() {
+    if (!CONTEXT_HOST || !analyticsAllowed()) { analyticsContext={}; return; }
+    if (typeof window.gtag !== "function" || Date.now()-analyticsRequestedAt<30000)return;
+    analyticsRequestedAt=Date.now();
+    var epoch=analyticsEpoch;
+    ["client_id","session_id"].forEach(function(field){
+      try { window.gtag("get",GA_MEASUREMENT,field,function(value){
+        if(epoch!==analyticsEpoch || !analyticsAllowed())return;
+        var text=String(value || ""), valid=field==="client_id" ? /^\d{1,20}\.\d{1,20}$/.test(text) : /^\d{1,20}$/.test(text);
+        if(valid){analyticsContext[field]=text;tagLinks(firstTouch());}
+      }); } catch(e) { /* A blocked analytics library must never break a booking. */ }
+    });
+  }
+
   function tagLink(link, touch) {
     if (!link || !link.getAttribute) return;
     var href = link.getAttribute("href") || "";
@@ -166,7 +210,11 @@
     set("utm_campaign", touch.utm && touch.utm.utm_campaign);
     // У брони нет поля Source-Page, а знать, с какой страницы пошли на звонок,
     // нужно ровно так же — кладём путь страницы в utm_content.
-    set("utm_content", window.location.pathname);
+    var previous=url.searchParams.get("utm_content");
+    if(CONTEXT_HOST && (!previous || previous===generatedContent.get(link))){
+      var context=bookingContext(touch);
+      if(context){url.searchParams.set("utm_content",context);generatedContent.set(link,context);}
+    } else { set("utm_content", window.location.pathname); }
     set("utm_term", touch.utm && touch.utm.utm_term);
 
     link.setAttribute("href", url.toString());
@@ -220,6 +268,12 @@
 
   function start() {
     fillAll();
+    refreshAnalytics();
+    document.addEventListener("futura:consent",function(){
+      analyticsEpoch++;analyticsContext={};analyticsRequestedAt=0;
+      tagLinks(firstTouch());refreshAnalytics();
+    });
+    document.addEventListener("pointerdown",refreshAnalytics,true);
 
     // Формы внутри попапов и CMS-списков появляются позже — добираем их.
     if (window.MutationObserver) {
