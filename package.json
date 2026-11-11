@@ -1,0 +1,11 @@
+{
+  "name": "futura-inc-site-code",
+  "private": true,
+  "description": "Фронтенд-код страниц futura.law, подключается в Webflow ссылкой",
+  "scripts": {
+    "test": "for f in test-*.mjs; do echo \"— $f\"; node \"$f\" || exit 1; done"
+  },
+  "devDependencies": {
+    "jsdom": "^27.0.0"
+  }
+}
